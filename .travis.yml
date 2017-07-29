@@ -24,3 +24,6 @@ matrix:
   fast_finish: true
   allow_failures:
   - go: tip
+
+after_success:
+  - test ${TRAVIS_TAG:0:1} = v && curl -sL https://git.io/goreleaser | bash
