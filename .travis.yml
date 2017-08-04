@@ -4,6 +4,11 @@ language: go
 go:
 - 1.8.1
 
+before_install:
+- cd ../.. &&
+  mv coveo terraform-providers &&
+  cd gruntwork-io/terragrunt;
+
 install:
 # This script is used by the Travis build to install a cookie for
 # go.googlesource.com so rate limits are higher when using `go get` to fetch
@@ -24,3 +29,9 @@ matrix:
   fast_finish: true
   allow_failures:
   - go: tip
+
+after_success:
+- if [ ${TRAVIS_TAG::1} = v ];
+  then
+    curl -sL https://git.io/goreleaser | bash;
+  fi
