@@ -5,26 +5,36 @@ go:
 - 1.8.1
 
 before_install:
-- cd ../.. &&
-  mv coveo terraform-providers &&
-  cd terraform-providers/terraform-provider-aws;
+- if [ ${TRAVIS_TAG::1} = v ];
+  then
+    cd ../.. &&
+    mv coveo terraform-providers &&
+    cd terraform-providers/terraform-provider-aws;
+  fi
 
 install:
 # This script is used by the Travis build to install a cookie for
 # go.googlesource.com so rate limits are higher when using `go get` to fetch
 # packages that live there.
 # See: https://github.com/golang/go/issues/12933
-- bash scripts/gogetcookie.sh
-- go get github.com/kardianos/govendor
+- if [ ${TRAVIS_TAG::1} = v ];
+  then
+    bash scripts/gogetcookie.sh &&
+    go get github.com/kardianos/govendor;
+  fi
 
 script:
-- make test
-- make vendor-status
-- make vet
+- if [ ${TRAVIS_TAG::1} = v ];
+  then
+    make test &&
+    make vendor-status &&
+    make vet;
+  fi
 
-branches:
-  only:
-  - master
+# branches:
+#   only:
+#   - master
+  
 matrix:
   fast_finish: true
   allow_failures:
