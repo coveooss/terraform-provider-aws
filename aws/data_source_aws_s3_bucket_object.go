@@ -63,7 +63,7 @@ func dataSourceAwsS3BucketObject() *schema.Resource {
 				Computed: true,
 			},
 			"forced_content_type": &schema.Schema{
-				Type: schema.TypeString,
+				Type:     schema.TypeString,
 				Optional: true,
 			},
 			"key": &schema.Schema{
@@ -144,8 +144,8 @@ func dataSourceAwsS3BucketObjectRead(d *schema.ResourceData, meta interface{}) e
 	}
 
 	contentType := *out.ContentType
-	if forcedContentType != "" {
-		contentType = forcedContentType
+	if forcedContentType == "" {
+		forcedContentType = contentType
 	}
 
 	log.Printf("[DEBUG] Received S3 object: %s", out)
@@ -157,7 +157,7 @@ func dataSourceAwsS3BucketObjectRead(d *schema.ResourceData, meta interface{}) e
 	d.Set("content_encoding", out.ContentEncoding)
 	d.Set("content_language", out.ContentLanguage)
 	d.Set("content_length", out.ContentLength)
-	d.Set("content_type", contentType)
+	d.Set("content_type", out.ContentType)
 	// See https://forums.aws.amazon.com/thread.jspa?threadID=44003
 	d.Set("etag", strings.Trim(*out.ETag, `"`))
 	d.Set("expiration", out.Expiration)
@@ -176,7 +176,7 @@ func dataSourceAwsS3BucketObjectRead(d *schema.ResourceData, meta interface{}) e
 		d.Set("storage_class", out.StorageClass)
 	}
 
-	if isContentTypeAllowed(&contentType) {
+	if isContentTypeAllowed(&forcedContentType) {
 		input := s3.GetObjectInput{
 			Bucket: aws.String(bucket),
 			Key:    aws.String(key),

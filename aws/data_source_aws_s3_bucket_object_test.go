@@ -103,7 +103,7 @@ func TestAccDataSourceAWSS3BucketObject_forcedContentType_readableBody(t *testin
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAwsS3ObjectDataSourceExists("data.aws_s3_bucket_object.obj", &dsObj),
 					resource.TestCheckResourceAttr("data.aws_s3_bucket_object.obj", "content_length", "120"),
-					resource.TestCheckResourceAttr("data.aws_s3_bucket_object.obj", "content_type", "text/text"),
+					resource.TestCheckResourceAttr("data.aws_s3_bucket_object.obj", "content_type", "application/x-x509-ca-cert"),
 					resource.TestCheckResourceAttr("data.aws_s3_bucket_object.obj", "etag", "877716107971cdd406981bbbe85c97f4"),
 					resource.TestMatchResourceAttr("data.aws_s3_bucket_object.obj", "last_modified",
 						regexp.MustCompile("^[a-zA-Z]{3}, [0-9]+ [a-zA-Z]+ [0-9]{4} [0-9:]+ [A-Z]+$")),
@@ -276,6 +276,7 @@ func testAccAWSDataSourceS3ObjectConfig_forcedContentType_readableBody(randInt i
 	resources := fmt.Sprintf(`
 resource "aws_s3_bucket" "object_bucket" {
 	bucket = "tf-object-test-bucket-%d"
+	forced_content_type = "text/text"
 }
 resource "aws_s3_bucket_object" "object" {
 	bucket = "${aws_s3_bucket.object_bucket.bucket}"
