@@ -276,7 +276,6 @@ func testAccAWSDataSourceS3ObjectConfig_forcedContentType_readableBody(randInt i
 	resources := fmt.Sprintf(`
 resource "aws_s3_bucket" "object_bucket" {
 	bucket = "tf-object-test-bucket-%d"
-	forced_content_type = "text/text"
 }
 resource "aws_s3_bucket_object" "object" {
 	bucket = "${aws_s3_bucket.object_bucket.bucket}"
@@ -289,7 +288,8 @@ resource "aws_s3_bucket_object" "object" {
 	both := fmt.Sprintf(`%s
 data "aws_s3_bucket_object" "obj" {
 	bucket = "tf-object-test-bucket-%d"
-	key = "tf-testing-obj-%d-readable"
+	key = "tf-testing-obj-%d-forced-readable"
+	forced_content_type = "text/text"
 }`, resources, randInt, randInt)
 
 	return resources, both
