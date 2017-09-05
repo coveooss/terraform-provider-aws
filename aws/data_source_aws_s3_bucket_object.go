@@ -62,7 +62,7 @@ func dataSourceAwsS3BucketObject() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"force_content_type": &schema.Schema{
+			"forced_content_type": &schema.Schema{
 				Type: schema.TypeString,
 				Optional: true,
 			},
@@ -113,7 +113,7 @@ func dataSourceAwsS3BucketObjectRead(d *schema.ResourceData, meta interface{}) e
 
 	bucket := d.Get("bucket").(string)
 	key := d.Get("key").(string)
-	forceContentType := d.Get("force_content_type").(string)
+	forcedContentType := d.Get("forced_content_type").(string)
 
 	input := s3.HeadObjectInput{
 		Bucket: aws.String(bucket),
@@ -144,8 +144,8 @@ func dataSourceAwsS3BucketObjectRead(d *schema.ResourceData, meta interface{}) e
 	}
 
 	contentType := *out.ContentType
-	if forceContentType != "" {
-		contentType = forceContentType
+	if forcedContentType != "" {
+		contentType = forcedContentType
 	}
 
 	log.Printf("[DEBUG] Received S3 object: %s", out)

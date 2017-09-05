@@ -80,9 +80,9 @@ func TestAccDataSourceAWSS3BucketObject_readableBody(t *testing.T) {
 	})
 }
 
-func TestAccDataSourceAWSS3BucketObject_forceContentType_readableBody(t *testing.T) {
+func TestAccDataSourceAWSS3BucketObject_forcedContentType_readableBody(t *testing.T) {
 	rInt := acctest.RandInt()
-	resourceOnlyConf, conf := testAccAWSDataSourceS3ObjectConfig_forceContentType_readableBody(rInt)
+	resourceOnlyConf, conf := testAccAWSDataSourceS3ObjectConfig_forcedContentType_readableBody(rInt)
 
 	var rObj s3.GetObjectOutput
 	var dsObj s3.GetObjectOutput
@@ -272,7 +272,7 @@ data "aws_s3_bucket_object" "obj" {
 	return resources, both
 }
 
-func testAccAWSDataSourceS3ObjectConfig_forceContentType_readableBody(randInt int) (string, string) {
+func testAccAWSDataSourceS3ObjectConfig_forcedContentType_readableBody(randInt int) (string, string) {
 	resources := fmt.Sprintf(`
 resource "aws_s3_bucket" "object_bucket" {
 	bucket = "tf-object-test-bucket-%d"
