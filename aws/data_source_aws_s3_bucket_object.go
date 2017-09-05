@@ -62,6 +62,10 @@ func dataSourceAwsS3BucketObject() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"force_content_type": &schema.Schema{
+				Type: schema.TypeString,
+				Optional: true,
+			},
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -99,7 +103,6 @@ func dataSourceAwsS3BucketObject() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-
 			"tags": tagsSchemaComputed(),
 		},
 	}
@@ -110,6 +113,7 @@ func dataSourceAwsS3BucketObjectRead(d *schema.ResourceData, meta interface{}) e
 
 	bucket := d.Get("bucket").(string)
 	key := d.Get("key").(string)
+	forceContentType := d.Get("force_content_type").(string)
 
 	input := s3.HeadObjectInput{
 		Bucket: aws.String(bucket),
@@ -139,6 +143,11 @@ func dataSourceAwsS3BucketObjectRead(d *schema.ResourceData, meta interface{}) e
 			bucket+key, versionText)
 	}
 
+	contentType := *out.ContentType
+	if forceContentType != "" {
+		contentType = forceContentType
+	}
+
 	log.Printf("[DEBUG] Received S3 object: %s", out)
 
 	d.SetId(uniqueId)
@@ -148,7 +157,7 @@ func dataSourceAwsS3BucketObjectRead(d *schema.ResourceData, meta interface{}) e
 	d.Set("content_encoding", out.ContentEncoding)
 	d.Set("content_language", out.ContentLanguage)
 	d.Set("content_length", out.ContentLength)
-	d.Set("content_type", out.ContentType)
+	d.Set("content_type", contentType)
 	// See https://forums.aws.amazon.com/thread.jspa?threadID=44003
 	d.Set("etag", strings.Trim(*out.ETag, `"`))
 	d.Set("expiration", out.Expiration)
@@ -167,7 +176,7 @@ func dataSourceAwsS3BucketObjectRead(d *schema.ResourceData, meta interface{}) e
 		d.Set("storage_class", out.StorageClass)
 	}
 
-	if isContentTypeAllowed(out.ContentType) {
+	if isContentTypeAllowed(&contentType) {
 		input := s3.GetObjectInput{
 			Bucket: aws.String(bucket),
 			Key:    aws.String(key),
