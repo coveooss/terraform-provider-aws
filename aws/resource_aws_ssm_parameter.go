@@ -1,7 +1,6 @@
 package aws
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -55,7 +54,7 @@ func resourceAwsSsmParameter() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "",
-			},
+		},
 			"tags": tagsSchema(),
 		},
 	}
@@ -76,7 +75,7 @@ func resourceAwsSsmParameterRead(d *schema.ResourceData, meta interface{}) error
 			log.Print("[INFO] The resource no longer exists, marking it for recreation:", d.Id())
 			d.SetId("")
 			return nil
-		}
+	}
 		param := resp.Parameters[0]
 		d.Set("name", param.Name)
 		d.Set("type", param.Type)
@@ -133,11 +132,11 @@ func resourceAwsSsmParameterPut(d *schema.ResourceData, meta interface{}) error 
 	log.Printf("[INFO] Creating SSM Parameter: %s", d.Get("name").(string))
 
 	paramInput := &ssm.PutParameterInput{
-		Name:           aws.String(d.Get("name").(string)),
+		Name:      aws.String(d.Get("name").(string)),
 		Description:    aws.String(d.Get("description").(string)),
-		Type:           aws.String(d.Get("type").(string)),
-		Value:          aws.String(d.Get("value").(string)),
-		Overwrite:      aws.Bool(d.Get("overwrite").(bool)),
+		Type:      aws.String(d.Get("type").(string)),
+		Value:     aws.String(d.Get("value").(string)),
+		Overwrite: aws.Bool(d.Get("overwrite").(bool)),
 		AllowedPattern: aws.String(d.Get("allowed_pattern").(string)),
 	}
 
