@@ -150,11 +150,13 @@ func resourceAwsSsmParameterPut(d *schema.ResourceData, meta interface{}) error 
 
 	log.Printf("[INFO] Creating SSM Parameter: %s", d.Get("name").(string))
 
+	// Overwrite is set to true if the ressource already exists in the state or
+	// if it has been explicitly specified
 	paramInput := &ssm.PutParameterInput{
 		Name:           aws.String(d.Get("name").(string)),
 		Type:           aws.String(d.Get("type").(string)),
 		Value:          aws.String(d.Get("value").(string)),
-		Overwrite:      aws.Bool(shouldUpdateSsmParameter(d)),
+		Overwrite:      aws.Bool(!d.IsNewResource() || d.Get("overwrite").(bool)),
 		AllowedPattern: aws.String(d.Get("allowed_pattern").(string)),
 	}
 
@@ -183,15 +185,4 @@ func resourceAwsSsmParameterPut(d *schema.ResourceData, meta interface{}) error 
 	d.SetId(d.Get("name").(string))
 
 	return resourceAwsSsmParameterRead(d, meta)
-}
-
-func shouldUpdateSsmParameter(d *schema.ResourceData) bool {
-	// If the user has specified a preference, return their preference
-	if value, ok := d.GetOkExists("overwrite"); ok {
-		return value.(bool)
-	}
-
-	// Since the user has not specified a preference, obey lifecycle rules
-	// if it is not a new resource, otherwise overwrite should be set to false.
-	return !d.IsNewResource()
 }
