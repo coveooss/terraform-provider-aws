@@ -1321,7 +1321,7 @@ func validateDbOptionGroupNamePrefix(v interface{}, k string) (ws []string, erro
 	return
 }
 
-func validateAwsAlbTargetGroupName(v interface{}, k string) (ws []string, errors []error) {
+func validateAwsLbTargetGroupName(v interface{}, k string) (ws []string, errors []error) {
 	name := v.(string)
 	if len(name) > 32 {
 		errors = append(errors, fmt.Errorf("%q (%q) cannot be longer than '32' characters", k, name))
@@ -1329,7 +1329,7 @@ func validateAwsAlbTargetGroupName(v interface{}, k string) (ws []string, errors
 	return
 }
 
-func validateAwsAlbTargetGroupNamePrefix(v interface{}, k string) (ws []string, errors []error) {
+func validateAwsLbTargetGroupNamePrefix(v interface{}, k string) (ws []string, errors []error) {
 	name := v.(string)
 	if len(name) > 32 {
 		errors = append(errors, fmt.Errorf("%q (%q) cannot be longer than '6' characters", k, name))
@@ -1487,10 +1487,27 @@ func validateSsmParameterType(v interface{}, k string) (ws []string, errors []er
 	return
 }
 
-func validateBatchComputeEnvironmentName(v interface{}, k string) (ws []string, errors []error) {
+func validateBatchName(v interface{}, k string) (ws []string, errors []error) {
 	value := v.(string)
-	if !(regexp.MustCompile(`^[A-Za-z0-9_]*$`).MatchString(value) && len(value) <= 128) {
-		errors = append(errors, fmt.Errorf("computeEnvironmentName must be up to 128 letters (uppercase and lowercase), numbers, and underscores."))
+	if !regexp.MustCompile(`^[A-Za-z0-9_]{1,128}$`).MatchString(value) {
+		errors = append(errors, fmt.Errorf("%q (%q) must be up to 128 letters (uppercase and lowercase), numbers, and underscores.", k, v))
+	}
+	return
+}
+
+func validateSecurityGroupRuleDescription(v interface{}, k string) (ws []string, errors []error) {
+	value := v.(string)
+	if len(value) > 255 {
+		errors = append(errors, fmt.Errorf(
+			"%q cannot be longer than 255 characters: %q", k, value))
+	}
+
+	// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_IpRange.html
+	pattern := `^[A-Za-z0-9 \.\_\-\:\/\(\)\#\,\@\[\]\+\=\;\{\}\!\$\*]+$`
+	if !regexp.MustCompile(pattern).MatchString(value) {
+		errors = append(errors, fmt.Errorf(
+			"%q doesn't comply with restrictions (%q): %q",
+			k, pattern, value))
 	}
 	return
 }
