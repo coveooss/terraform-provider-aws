@@ -18,6 +18,9 @@ func resourceAwsSsmParameter() *schema.Resource {
 		Update: resourceAwsSsmParameterPut,
 		Delete: resourceAwsSsmParameterDelete,
 		Exists: resourceAwsSmmParameterExists,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -62,7 +65,7 @@ func resourceAwsSmmParameterExists(d *schema.ResourceData, meta interface{}) (bo
 	conn := meta.(*AWSClient).ssmconn
 
 	resp, err := conn.GetParameters(&ssm.GetParametersInput{
-		Names:          []*string{aws.String(d.Get("name").(string))},
+		Names:          []*string{aws.String(d.Id())},
 		WithDecryption: aws.Bool(true),
 	})
 
@@ -73,14 +76,19 @@ func resourceAwsSmmParameterExists(d *schema.ResourceData, meta interface{}) (bo
 }
 
 func resourceAwsSsmParameterRead(d *schema.ResourceData, meta interface{}) error {
-	conn := meta.(*AWSClient).ssmconn
+	ssmconn := meta.(*AWSClient).ssmconn
 
 	log.Printf("[DEBUG] Reading SSM Parameter: %s", d.Id())
 
-	resp, err := conn.GetParameters(&ssm.GetParametersInput{
-		Names:          []*string{aws.String(d.Get("name").(string))},
+	paramInput := &ssm.GetParametersInput{
+		Names: []*string{
+			aws.String(d.Id()),
+		},
 		WithDecryption: aws.Bool(true),
-	})
+	}
+
+	resp, err := ssmconn.GetParameters(paramInput)
+
 	if err != nil {
 		return errwrap.Wrapf("[ERROR] Error getting SSM parameter: {{err}}", err)
 	}
@@ -90,11 +98,11 @@ func resourceAwsSsmParameterRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("type", param.Type)
 	d.Set("value", param.Value)
 
-	respDetailed, err := conn.DescribeParameters(&ssm.DescribeParametersInput{
+	respDetailed, err := ssmconn.DescribeParameters(&ssm.DescribeParametersInput{
 		Filters: []*ssm.ParametersFilter{
 			&ssm.ParametersFilter{
 				Key:    aws.String("Name"),
-				Values: []*string{aws.String(d.Get("name").(string))},
+				Values: []*string{aws.String(d.Id())},
 			},
 		},
 	})
@@ -117,8 +125,8 @@ func resourceAwsSsmParameterRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("description", detail.Description)
 	d.Set("allowed_pattern", detail.AllowedPattern)
 
-	if tagList, err := conn.ListTagsForResource(&ssm.ListTagsForResourceInput{
-		ResourceId:   aws.String(d.Get("name").(string)),
+	if tagList, err := ssmconn.ListTagsForResource(&ssm.ListTagsForResourceInput{
+		ResourceId:   aws.String(d.Id()),
 		ResourceType: aws.String("Parameter"),
 	}); err != nil {
 		return fmt.Errorf("Failed to get SSM parameter tags for %s: %s", d.Get("name"), err)
