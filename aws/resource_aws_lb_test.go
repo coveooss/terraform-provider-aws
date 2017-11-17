@@ -64,7 +64,7 @@ func TestAccAWSLB_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "subnets.#", "2"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "security_groups.#", "1"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.%", "1"),
-					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.TestName", "TestAccAWSALB_basic"),
+					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.Name", "TestAccAWSALB_basic"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "enable_deletion_protection", "false"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "idle_timeout", "30"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "ip_address_type", "ipv4"),
@@ -96,7 +96,7 @@ func TestAccAWSLB_networkLoadbalancer(t *testing.T) {
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "name", lbName),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "internal", "true"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.%", "1"),
-					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.TestName", "TestAccAWSALB_basic"),
+					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.Name", "TestAccAWSALB_basic"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "enable_deletion_protection", "false"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "ip_address_type", "ipv4"),
 					resource.TestCheckResourceAttrSet("aws_lb.lb_test", "zone_id"),
@@ -155,7 +155,7 @@ func TestAccAWSLBBackwardsCompatibility(t *testing.T) {
 					resource.TestCheckResourceAttr("aws_alb.lb_test", "subnets.#", "2"),
 					resource.TestCheckResourceAttr("aws_alb.lb_test", "security_groups.#", "1"),
 					resource.TestCheckResourceAttr("aws_alb.lb_test", "tags.%", "1"),
-					resource.TestCheckResourceAttr("aws_alb.lb_test", "tags.TestName", "TestAccAWSALB_basic"),
+					resource.TestCheckResourceAttr("aws_alb.lb_test", "tags.Name", "TestAccAWSALB_basic"),
 					resource.TestCheckResourceAttr("aws_alb.lb_test", "enable_deletion_protection", "false"),
 					resource.TestCheckResourceAttr("aws_alb.lb_test", "idle_timeout", "30"),
 					resource.TestCheckResourceAttr("aws_alb.lb_test", "ip_address_type", "ipv4"),
@@ -247,7 +247,7 @@ func TestAccAWSLB_tags(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckAWSLBExists("aws_lb.lb_test", &conf),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.%", "1"),
-					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.TestName", "TestAccAWSALB_basic"),
+					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.Name", "TestAccAWSALB_basic"),
 				),
 			},
 			{
@@ -371,7 +371,7 @@ func TestAccAWSLB_noSecurityGroup(t *testing.T) {
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "subnets.#", "2"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "security_groups.#", "1"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.%", "1"),
-					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.TestName", "TestAccAWSALB_basic"),
+					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.Name", "TestAccAWSALB_basic"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "enable_deletion_protection", "false"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "idle_timeout", "30"),
 					resource.TestCheckResourceAttrSet("aws_lb.lb_test", "vpc_id"),
@@ -403,7 +403,7 @@ func TestAccAWSLB_accesslogs(t *testing.T) {
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "subnets.#", "2"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "security_groups.#", "1"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.%", "1"),
-					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.TestName", "TestAccAWSALB_basic"),
+					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.Name", "TestAccAWSALB_basic"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "enable_deletion_protection", "false"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "idle_timeout", "30"),
 					resource.TestCheckResourceAttrSet("aws_lb.lb_test", "vpc_id"),
@@ -421,7 +421,7 @@ func TestAccAWSLB_accesslogs(t *testing.T) {
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "subnets.#", "2"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "security_groups.#", "1"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.%", "1"),
-					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.TestName", "TestAccAWSALB_basic1"),
+					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.Name", "TestAccAWSALB_basic1"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "enable_deletion_protection", "false"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "idle_timeout", "50"),
 					resource.TestCheckResourceAttrSet("aws_lb.lb_test", "vpc_id"),
@@ -443,7 +443,7 @@ func TestAccAWSLB_accesslogs(t *testing.T) {
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "subnets.#", "2"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "security_groups.#", "1"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.%", "1"),
-					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.TestName", "TestAccAWSALB_basic1"),
+					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.Name", "TestAccAWSALB_basic1"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "enable_deletion_protection", "false"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "idle_timeout", "50"),
 					resource.TestCheckResourceAttrSet("aws_lb.lb_test", "vpc_id"),
@@ -452,6 +452,31 @@ func TestAccAWSLB_accesslogs(t *testing.T) {
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "access_logs.#", "1"),
 					resource.TestCheckResourceAttr("aws_lb.lb_test", "access_logs.0.enabled", "false"),
 					resource.TestCheckResourceAttrSet("aws_lb.lb_test", "arn"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccAWSLB_networkLoadbalancer_subnet_change(t *testing.T) {
+	var conf elbv2.LoadBalancer
+	lbName := fmt.Sprintf("testaccawslb-basic-%s", acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum))
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:      func() { testAccPreCheck(t) },
+		IDRefreshName: "aws_lb.lb_test",
+		Providers:     testAccProviders,
+		CheckDestroy:  testAccCheckAWSLBDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAWSLBConfig_networkLoadbalancer_subnets(lbName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckAWSLBExists("aws_lb.lb_test", &conf),
+					resource.TestCheckResourceAttr("aws_lb.lb_test", "name", lbName),
+					resource.TestCheckResourceAttr("aws_lb.lb_test", "internal", "true"),
+					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.%", "1"),
+					resource.TestCheckResourceAttr("aws_lb.lb_test", "tags.Name", "testAccAWSLBConfig_networkLoadbalancer_subnets"),
+					resource.TestCheckResourceAttr("aws_lb.lb_test", "load_balancer_type", "network"),
 				),
 			},
 		},
@@ -541,7 +566,7 @@ func testAccAWSLBConfigWithIpAddressTypeUpdated(lbName string) string {
   enable_deletion_protection = false
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -590,7 +615,7 @@ resource "aws_vpc" "alb_test" {
   assign_generated_ipv6_cidr_block = true
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -606,7 +631,7 @@ resource "aws_subnet" "alb_test_1" {
   ipv6_cidr_block = "${cidrsubnet(aws_vpc.alb_test.ipv6_cidr_block, 8, 1)}"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -618,7 +643,7 @@ resource "aws_subnet" "alb_test_2" {
   ipv6_cidr_block = "${cidrsubnet(aws_vpc.alb_test.ipv6_cidr_block, 8, 2)}"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -635,7 +660,7 @@ resource "aws_security_group" "alb_test" {
   }
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }`, lbName, lbName)
 }
@@ -652,7 +677,7 @@ func testAccAWSLBConfigWithIpAddressType(lbName string) string {
   enable_deletion_protection = false
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -701,7 +726,7 @@ resource "aws_vpc" "alb_test" {
   assign_generated_ipv6_cidr_block = true
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -717,7 +742,7 @@ resource "aws_subnet" "alb_test_1" {
   ipv6_cidr_block = "${cidrsubnet(aws_vpc.alb_test.ipv6_cidr_block, 8, 1)}"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -729,7 +754,7 @@ resource "aws_subnet" "alb_test_2" {
   ipv6_cidr_block = "${cidrsubnet(aws_vpc.alb_test.ipv6_cidr_block, 8, 2)}"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -746,7 +771,7 @@ resource "aws_security_group" "alb_test" {
   }
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }`, lbName, lbName)
 }
@@ -762,7 +787,7 @@ func testAccAWSLBConfig_basic(lbName string) string {
   enable_deletion_protection = false
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -777,7 +802,7 @@ resource "aws_vpc" "alb_test" {
   cidr_block = "10.0.0.0/16"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -789,7 +814,7 @@ resource "aws_subnet" "alb_test" {
   availability_zone       = "${element(data.aws_availability_zones.available.names, count.index)}"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -813,11 +838,70 @@ resource "aws_security_group" "alb_test" {
   }
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }`, lbName)
 }
 
+func testAccAWSLBConfig_networkLoadbalancer_subnets(lbName string) string {
+	return fmt.Sprintf(`resource "aws_vpc" "alb_test" {
+  cidr_block = "10.0.0.0/16"
+
+  tags {
+    Name = "testAccAWSLBConfig_networkLoadbalancer_subnets"
+  }
+}
+
+resource "aws_lb" "lb_test" {
+  name = "%s"
+
+  subnets = [
+    "${aws_subnet.alb_test_1.id}",
+    "${aws_subnet.alb_test_2.id}",
+    "${aws_subnet.alb_test_3.id}",
+  ]
+
+  load_balancer_type         = "network"
+  internal                   = true
+  idle_timeout               = 60
+  enable_deletion_protection = false
+
+  tags {
+    Name = "testAccAWSLBConfig_networkLoadbalancer_subnets"
+  }
+}
+
+resource "aws_subnet" "alb_test_1" {
+  vpc_id            = "${aws_vpc.alb_test.id}"
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "us-west-2a"
+
+  tags {
+    Name = "testAccAWSLBConfig_networkLoadbalancer_subnets"
+  }
+}
+
+resource "aws_subnet" "alb_test_2" {
+  vpc_id            = "${aws_vpc.alb_test.id}"
+  cidr_block        = "10.0.2.0/24"
+  availability_zone = "us-west-2b"
+
+  tags {
+    Name = "testAccAWSLBConfig_networkLoadbalancer_subnets"
+  }
+}
+
+resource "aws_subnet" "alb_test_3" {
+  vpc_id            = "${aws_vpc.alb_test.id}"
+  cidr_block        = "10.0.3.0/24"
+  availability_zone = "us-west-2c"
+
+  tags {
+    Name = "testAccAWSLBConfig_networkLoadbalancer_subnets"
+  }
+}
+`, lbName)
+}
 func testAccAWSLBConfig_networkLoadbalancer(lbName string) string {
 	return fmt.Sprintf(`resource "aws_lb" "lb_test" {
   name            = "%s"
@@ -831,7 +915,7 @@ func testAccAWSLBConfig_networkLoadbalancer(lbName string) string {
   }
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -839,7 +923,7 @@ resource "aws_vpc" "alb_test" {
   cidr_block = "10.10.0.0/16"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -850,7 +934,7 @@ resource "aws_subnet" "alb_test" {
   availability_zone       = "us-west-2a"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -920,7 +1004,7 @@ func testAccAWSLBConfigBackwardsCompatibility(lbName string) string {
   enable_deletion_protection = false
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -935,7 +1019,7 @@ resource "aws_vpc" "alb_test" {
   cidr_block = "10.0.0.0/16"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -947,7 +1031,7 @@ resource "aws_subnet" "alb_test" {
   availability_zone       = "${element(data.aws_availability_zones.available.names, count.index)}"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -971,7 +1055,7 @@ resource "aws_security_group" "alb_test" {
   }
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }`, lbName)
 }
@@ -987,7 +1071,7 @@ func testAccAWSLBConfig_updateSubnets(lbName string) string {
   enable_deletion_protection = false
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1002,7 +1086,7 @@ resource "aws_vpc" "alb_test" {
   cidr_block = "10.0.0.0/16"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1014,7 +1098,7 @@ resource "aws_subnet" "alb_test" {
   availability_zone       = "${element(data.aws_availability_zones.available.names, count.index)}"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1038,7 +1122,7 @@ resource "aws_security_group" "alb_test" {
   }
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }`, lbName)
 }
@@ -1054,7 +1138,7 @@ resource "aws_lb" "lb_test" {
   enable_deletion_protection = false
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1069,7 +1153,7 @@ resource "aws_vpc" "alb_test" {
   cidr_block = "10.0.0.0/16"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1089,7 +1173,7 @@ resource "aws_subnet" "alb_test" {
   availability_zone       = "${element(data.aws_availability_zones.available.names, count.index)}"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1113,7 +1197,7 @@ resource "aws_security_group" "alb_test" {
   }
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }`)
 }
@@ -1130,7 +1214,7 @@ resource "aws_lb" "lb_test" {
   enable_deletion_protection = false
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1145,7 +1229,7 @@ resource "aws_vpc" "alb_test" {
   cidr_block = "10.0.0.0/16"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1165,7 +1249,7 @@ resource "aws_subnet" "alb_test" {
   availability_zone       = "${element(data.aws_availability_zones.available.names, count.index)}"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1189,7 +1273,7 @@ resource "aws_security_group" "alb_test" {
   }
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }`)
 }
@@ -1206,7 +1290,7 @@ resource "aws_lb" "lb_test" {
   enable_deletion_protection = false
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1221,7 +1305,7 @@ resource "aws_vpc" "alb_test" {
   cidr_block = "10.0.0.0/16"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1233,7 +1317,7 @@ resource "aws_subnet" "alb_test" {
   availability_zone       = "${element(data.aws_availability_zones.available.names, count.index)}"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1257,7 +1341,7 @@ resource "aws_security_group" "alb_test" {
   }
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }`)
 }
@@ -1288,7 +1372,7 @@ resource "aws_vpc" "alb_test" {
   cidr_block = "10.0.0.0/16"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1300,7 +1384,7 @@ resource "aws_subnet" "alb_test" {
   availability_zone       = "${element(data.aws_availability_zones.available.names, count.index)}"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1324,7 +1408,7 @@ resource "aws_security_group" "alb_test" {
   }
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }`, lbName)
 }
@@ -1346,7 +1430,7 @@ func testAccAWSLBConfig_accessLogs(enabled bool, lbName, bucketName string) stri
   }
 
   tags {
-    TestName = "TestAccAWSALB_basic1"
+    Name = "TestAccAWSALB_basic1"
   }
 }
 
@@ -1399,7 +1483,7 @@ resource "aws_vpc" "alb_test" {
   cidr_block = "10.0.0.0/16"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1411,7 +1495,7 @@ resource "aws_subnet" "alb_test" {
   availability_zone       = "${element(data.aws_availability_zones.available.names, count.index)}"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1435,7 +1519,7 @@ resource "aws_security_group" "alb_test" {
   }
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }`, lbName, enabled, bucketName)
 }
@@ -1450,7 +1534,7 @@ func testAccAWSLBConfig_nosg(lbName string) string {
   enable_deletion_protection = false
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1465,7 +1549,7 @@ resource "aws_vpc" "alb_test" {
   cidr_block = "10.0.0.0/16"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1477,7 +1561,7 @@ resource "aws_subnet" "alb_test" {
   availability_zone       = "${element(data.aws_availability_zones.available.names, count.index)}"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }`, lbName)
 }
@@ -1493,7 +1577,7 @@ func testAccAWSLBConfig_updateSecurityGroups(lbName string) string {
   enable_deletion_protection = false
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1508,7 +1592,7 @@ resource "aws_vpc" "alb_test" {
   cidr_block = "10.0.0.0/16"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1520,7 +1604,7 @@ resource "aws_subnet" "alb_test" {
   availability_zone       = "${element(data.aws_availability_zones.available.names, count.index)}"
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }
 
@@ -1537,7 +1621,7 @@ resource "aws_security_group" "alb_test_2" {
   }
 
   tags {
-    TestName = "TestAccAWSALB_basic_2"
+    Name = "TestAccAWSALB_basic_2"
   }
 }
 
@@ -1561,7 +1645,7 @@ resource "aws_security_group" "alb_test" {
   }
 
   tags {
-    TestName = "TestAccAWSALB_basic"
+    Name = "TestAccAWSALB_basic"
   }
 }`, lbName)
 }

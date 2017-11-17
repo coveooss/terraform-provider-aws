@@ -262,7 +262,13 @@ func resourceAwsAppautoscalingPolicyCreate(d *schema.ResourceData, meta interfac
 		var err error
 		resp, err = conn.PutScalingPolicy(&params)
 		if err != nil {
+			if isAWSErr(err, "FailedResourceAccessException", "Rate exceeded") {
+				return resource.RetryableError(err)
+			}
 			if isAWSErr(err, "FailedResourceAccessException", "is not authorized to perform") {
+				return resource.RetryableError(err)
+			}
+			if isAWSErr(err, "FailedResourceAccessException", "token included in the request is invalid") {
 				return resource.RetryableError(err)
 			}
 			return resource.NonRetryableError(fmt.Errorf("Error putting scaling policy: %s", err))
