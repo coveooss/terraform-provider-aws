@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/emr"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/structure"
 )
 
 func validateInstanceUserDataSize(v interface{}, k string) (ws []string, errors []error) {
@@ -298,7 +299,7 @@ func validateCloudWatchLogResourcePolicyDocument(v interface{}, k string) (ws []
 	if len(value) > 5120 || (len(value) == 0) {
 		errors = append(errors, fmt.Errorf("CloudWatch log resource policy document must be between 1 and 5120 characters."))
 	}
-	if _, err := normalizeJsonString(v); err != nil {
+	if _, err := structure.NormalizeJsonString(v); err != nil {
 		errors = append(errors, fmt.Errorf("%q contains an invalid JSON: %s", k, err))
 	}
 	return
@@ -688,7 +689,7 @@ func validateApiGatewayIntegrationPassthroughBehavior(v interface{}, k string) (
 }
 
 func validateJsonString(v interface{}, k string) (ws []string, errors []error) {
-	if _, err := normalizeJsonString(v); err != nil {
+	if _, err := structure.NormalizeJsonString(v); err != nil {
 		errors = append(errors, fmt.Errorf("%q contains an invalid JSON: %s", k, err))
 	}
 	return
@@ -705,7 +706,7 @@ func validateIAMPolicyJson(v interface{}, k string) (ws []string, errors []error
 		errors = append(errors, fmt.Errorf("%q contains an invalid JSON policy", k))
 		return
 	}
-	if _, err := normalizeJsonString(v); err != nil {
+	if _, err := structure.NormalizeJsonString(v); err != nil {
 		errors = append(errors, fmt.Errorf("%q contains an invalid JSON: %s", k, err))
 	}
 	return
@@ -713,7 +714,7 @@ func validateIAMPolicyJson(v interface{}, k string) (ws []string, errors []error
 
 func validateCloudFormationTemplate(v interface{}, k string) (ws []string, errors []error) {
 	if looksLikeJsonString(v) {
-		if _, err := normalizeJsonString(v); err != nil {
+		if _, err := structure.NormalizeJsonString(v); err != nil {
 			errors = append(errors, fmt.Errorf("%q contains an invalid JSON: %s", k, err))
 		}
 	} else {
