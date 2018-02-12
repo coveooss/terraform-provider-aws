@@ -1549,80 +1549,6 @@ func TestValidateEmrCustomAmiId(t *testing.T) {
 	}
 }
 
-func TestValidateAppautoscalingScalableDimension(t *testing.T) {
-	cases := []struct {
-		Value    string
-		ErrCount int
-	}{
-		{
-			Value:    "ecs:service:DesiredCount",
-			ErrCount: 0,
-		},
-		{
-			Value:    "ec2:spot-fleet-request:TargetCapacity",
-			ErrCount: 0,
-		},
-		{
-			Value:    "ec2:service:DesiredCount",
-			ErrCount: 1,
-		},
-		{
-			Value:    "ecs:spot-fleet-request:TargetCapacity",
-			ErrCount: 1,
-		},
-		{
-			Value:    "",
-			ErrCount: 1,
-		},
-	}
-
-	for _, tc := range cases {
-		_, errors := validateAppautoscalingScalableDimension(tc.Value, "scalable_dimension")
-		if len(errors) != tc.ErrCount {
-			t.Fatalf("Scalable Dimension validation failed for value %q: %q", tc.Value, errors)
-		}
-	}
-}
-
-func TestValidateAppautoscalingServiceNamespace(t *testing.T) {
-	cases := []struct {
-		Value    string
-		ErrCount int
-	}{
-		{
-			Value:    "ecs",
-			ErrCount: 0,
-		},
-		{
-			Value:    "ec2",
-			ErrCount: 0,
-		},
-		{
-			Value:    "autoscaling",
-			ErrCount: 1,
-		},
-		{
-			Value:    "s3",
-			ErrCount: 1,
-		},
-		{
-			Value:    "es",
-			ErrCount: 1,
-		},
-		{
-			Value:    "",
-			ErrCount: 1,
-		},
-	}
-
-	for _, tc := range cases {
-		_, errors := validateAppautoscalingServiceNamespace(tc.Value, "service_namespace")
-		if len(errors) != tc.ErrCount {
-			t.Fatalf("Service Namespace validation failed for value %q: %q", tc.Value, errors)
-		}
-	}
-}
-
 func TestValidateDmsEndpointId(t *testing.T) {
 	validIds := []string{
 		"tf-test-endpoint-1",
@@ -1955,6 +1881,25 @@ func TestValidateApiGatewayUsagePlanQuotaSettings(t *testing.T) {
 		errors := validateApiGatewayUsagePlanQuotaSettings(m)
 		if len(errors) != tc.ErrCount {
 			t.Fatalf("API Gateway Usage Plan Quota Settings validation failed: %v", errors)
+		}
+	}
+}
+
+func TestValidateDynamoAttributeType(t *testing.T) {
+	validTypes := []string{"B", "N", "S"}
+
+	for _, s := range validTypes {
+		_, errors := validateDynamoAttributeType(s, "attribute")
+		if len(errors) > 0 {
+			t.Fatalf("%q should be a valid DynamoDB Attribute Type: %v", s, errors)
+		}
+	}
+
+	invalidTypes := []string{"A", "0", "DERP", "SO"}
+	for _, s := range invalidTypes {
+		_, errors := validateDynamoAttributeType(s, "attribute")
+		if len(errors) == 0 {
+			t.Fatalf("%q should not be a valid DynamoDB Attribute Type", s)
 		}
 	}
 }
@@ -2656,6 +2601,63 @@ func TestValidateCognitoRoleMappingsAmbiguousRoleResolutionAgainstType(t *testin
 	}
 }
 
+func TestValidateCognitoRoleMappingsRulesConfiguration(t *testing.T) {
+	cases := []struct {
+		MappingRule []interface{}
+		Type        string
+		ErrCount    int
+	}{
+		{
+			MappingRule: nil,
+			Type:        cognitoidentity.RoleMappingTypeRules,
+			ErrCount:    1,
+		},
+		{
+			MappingRule: []interface{}{
+				map[string]interface{}{
+					"Claim":     "isAdmin",
+					"MatchType": "Equals",
+					"RoleARN":   "arn:foo",
+					"Value":     "paid",
+				},
+			},
+			Type:     cognitoidentity.RoleMappingTypeRules,
+			ErrCount: 0,
+		},
+		{
+			MappingRule: []interface{}{
+				map[string]interface{}{
+					"Claim":     "isAdmin",
+					"MatchType": "Equals",
+					"RoleARN":   "arn:foo",
+					"Value":     "paid",
+				},
+			},
+			Type:     cognitoidentity.RoleMappingTypeToken,
+			ErrCount: 1,
+		},
+		{
+			MappingRule: nil,
+			Type:        cognitoidentity.RoleMappingTypeToken,
+			ErrCount:    0,
+		},
+	}
+
+	for _, tc := range cases {
+		m := make(map[string]interface{})
+		// Reproducing the undefined mapping_rule
+		if tc.MappingRule != nil {
+			m["mapping_rule"] = tc.MappingRule
+		}
+		m["type"] = tc.Type
+
+		errors := validateCognitoRoleMappingsRulesConfiguration(m)
+		if len(errors) != tc.ErrCount {
+			t.Fatalf("Cognito Role Mappings validation failed: %v, expected err count %d, got %d, for config %#v", errors, tc.ErrCount, len(errors), m)
+		}
+	}
+}
+
 func TestValidateCognitoRoleMappingsAmbiguousRoleResolution(t *testing.T) {
 	validValues := []string{
 		cognitoidentity.AmbiguousRoleResolutionTypeAuthenticatedRole,
@@ -2888,65 +2890,6 @@ func TestResourceAWSElastiCacheReplicationGroupAuthTokenValidation(t *testing.T)
 	}
 }
 
-func TestValidateAppautoscalingPredefinedMetricSpecification(t *testing.T) {
-	cases := []struct {
-		Value    string
-		ErrCount int
-	}{
-		{
-			Value:    "ALBRequestCountPerTarget",
-			ErrCount: 0,
-		},
-		{
-			Value:    "DynamoDBReadCapacityUtilization",
-			ErrCount: 0,
-		},
-		{
-			Value:    "DynamoDBWriteCapacityUtilization",
-			ErrCount: 0,
-		},
-		{
-			Value:    "EC2SpotFleetRequestAverageCPUUtilization",
-			ErrCount: 0,
-		},
-		{
-			Value:    "EC2SpotFleetRequestAverageNetworkIn",
-			ErrCount: 0,
-		},
-		{
-			Value:    "EC2SpotFleetRequestAverageNetworkOut",
-			ErrCount: 0,
-		},
-		{
-			Value:    "ECSServiceAverageCPUUtilization",
-			ErrCount: 0,
-		},
-		{
-			Value:    "ECSServiceAverageMemoryUtilization",
-			ErrCount: 0,
-		},
-		{
-			Value:    "RDSReaderAverageCPUUtilization",
-			ErrCount: 0,
-		},
-		{
-			Value:    "RDSReaderAverageDatabaseConnections",
-			ErrCount: 0,
-		},
-		{
-			Value:    "NotValid",
-			ErrCount: 1,
-		},
-	}
-	for _, tc := range cases {
-		_, errors := validateAppautoscalingPredefinedMetricSpecification(tc.Value, "predefined_metric_type")
-
-		if len(errors) != tc.ErrCount {
-			t.Fatalf("Expected %d errors, got %d: %s", tc.ErrCount, len(errors), errors)
-		}
-	}
-}
-
 func TestValidateCognitoUserPoolDomain(t *testing.T) {
 	validTypes := []string{
 		"valid-domain",
@@ -2970,6 +2913,38 @@ func TestValidateCognitoUserPoolDomain(t *testing.T) {
 		_, errors := validateCognitoUserPoolDomain(v, "name")
 		if len(errors) == 0 {
 			t.Fatalf("%q should be an invalid Cognito User Pool Domain", v)
+		}
+	}
+}
+
+func TestValidateCognitoUserGroupName(t *testing.T) {
+	validValues := []string{
+		"foo",
+		"7346241598935552",
+		"foo_bar",
+		"foo:bar",
+		"foo/bar",
+		"foo-bar",
+		"$foobar",
+		strings.Repeat("W", 128),
+	}
+
+	for _, s := range validValues {
+		_, errors := validateCognitoUserGroupName(s, "name")
+		if len(errors) > 0 {
+			t.Fatalf("%q should be a valid Cognito User Pool Group Name: %v", s, errors)
+		}
+	}
+
+	invalidValues := []string{
+		"",
+		strings.Repeat("W", 129), // > 128
+	}
+
+	for _, s := range invalidValues {
+		_, errors := validateCognitoUserGroupName(s, "name")
+		if len(errors) == 0 {
+			t.Fatalf("%q should not be a valid Cognito User Pool Group Name: %v", s, errors)
 		}
 	}
 }
@@ -3020,6 +2995,107 @@ func TestValidateServiceDiscoveryServiceHealthCheckConfigType(t *testing.T) {
 		_, errors := validateServiceDiscoveryServiceHealthCheckConfigType(v, "")
 		if len(errors) == 0 {
 			t.Fatalf("%q should be an invalid Service Discovery Health Check Config Type", v)
+		}
+	}
+}
+
+func TestValidateCognitoUserPoolId(t *testing.T) {
+	validValues := []string{
+		"eu-west-1_Foo123",
+		"ap-southeast-2_BaRBaz987",
+	}
+
+	for _, s := range validValues {
+		_, errors := validateCognitoUserPoolId(s, "user_pool_id")
+		if len(errors) > 0 {
+			t.Fatalf("%q should be a valid Cognito User Pool Id: %v", s, errors)
+		}
+	}
+
+	invalidValues := []string{
+		"",
+		"foo",
+		"us-east-1-Foo123",
+		"eu-central-2_Bar+4",
+	}
+
+	for _, s := range invalidValues {
+		_, errors := validateCognitoUserPoolId(s, "user_pool_id")
+		if len(errors) == 0 {
+			t.Fatalf("%q should not be a valid Cognito User Pool Id: %v", s, errors)
+		}
+	}
+}
+
+func TestValidateGuardDutyIpsetFormat(t *testing.T) {
+	validTypes := []string{"TXT", "STIX", "OTX_CSV", "ALIEN_VAULT", "PROOF_POINT", "FIRE_EYE"}
+	for _, v := range validTypes {
+		_, errors := validateGuardDutyIpsetFormat(v, "")
+		if len(errors) != 0 {
+			t.Fatalf("%q should be a valid GuardDuty IPSet Format: %q", v, errors)
+		}
+	}
+
+	invalidTypes := []string{
+		"hoge",
+		"txt",
+	}
+	for _, v := range invalidTypes {
+		_, errors := validateGuardDutyIpsetFormat(v, "")
+		if len(errors) == 0 {
+			t.Fatalf("%q should be an invalid GuardDuty IPSet Format", v)
+		}
+	}
+}
+
+func TestValidateGuardDutyThreatIntelSetFormat(t *testing.T) {
+	validTypes := []string{"TXT", "STIX", "OTX_CSV", "ALIEN_VAULT", "PROOF_POINT", "FIRE_EYE"}
+	for _, v := range validTypes {
+		_, errors := validateGuardDutyThreatIntelSetFormat(v, "")
+		if len(errors) != 0 {
+			t.Fatalf("%q should be a valid GuardDuty ThreatIntelSet Format: %q", v, errors)
+		}
+	}
+
+	invalidTypes := []string{
+		"hoge",
+		"txt",
+	}
+	for _, v := range invalidTypes {
+		_, errors := validateGuardDutyThreatIntelSetFormat(v, "")
+		if len(errors) == 0 {
+			t.Fatalf("%q should be an invalid GuardDuty ThreatIntelSet Format", v)
+		}
+	}
+}
+
+func TestValidateAmazonSideAsn(t *testing.T) {
+	validAsns := []string{
+		"64512",
+		"64513",
+		"65533",
+		"65534",
+		"4200000000",
+		"4200000001",
+		"4294967293",
+		"4294967294",
+	}
+	for _, v := range validAsns {
+		_, errors := validateAmazonSideAsn(v, "amazon_side_asn")
+		if len(errors) != 0 {
+			t.Fatalf("%q should be a valid ASN: %q", v, errors)
+		}
+	}
+
+	invalidAsns := []string{
+		"1",
+		"ABCDEFG",
+		"",
+	}
+	for _, v := range invalidAsns {
+		_, errors := validateAmazonSideAsn(v, "amazon_side_asn")
+		if len(errors) == 0 {
+			t.Fatalf("%q should be an invalid ASN", v)
 		}
 	}
 }
