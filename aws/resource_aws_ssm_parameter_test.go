@@ -273,7 +273,7 @@ resource "aws_ssm_parameter" "foo" {
 func testAccAWSSSMParameterBasicConfigOverwrite(rName, pType, value string) string {
 	return fmt.Sprintf(`
 resource "aws_ssm_parameter" "foo" {
-  name  = "%[1]s"
+  name  = "test_parameter-%[1]s"
   description  = "description for parameter %[1]s"
   type  = "%[2]s"
   value = "%[3]s"
