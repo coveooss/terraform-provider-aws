@@ -28,11 +28,15 @@ func TestValidateInstanceUserDataSize(t *testing.T) {
 
 	for _, s := range invalidValues {
 		_, errors := validateInstanceUserDataSize(s, "user_data")
-		if len(errors) == 0 {
+		if len(errors) != 1 {
 			t.Fatalf("%q should not be valid user data with limited size: %v", s, errors)
+		}
+		if !strings.Contains(errors[0].Error(), "16385") {
+			t.Fatalf("%q should trigger error message with actual size: %v", s, errors)
 		}
 	}
 }
+
 func TestValidateEcrRepositoryName(t *testing.T) {
 	validNames := []string{
 		"nginx-web-app",
@@ -1061,8 +1065,12 @@ func TestValidateSQSQueueName(t *testing.T) {
 		strings.Repeat("W", 80),
 	}
 	for _, v := range validNames {
-		if errors := validateSQSQueueName(v, "name"); len(errors) > 0 {
+		if _, errors := validateSQSQueueName(v, "name"); len(errors) > 0 {
 			t.Fatalf("%q should be a valid SQS queue Name", v)
+		}
+
+		if errors := validateSQSNonFifoQueueName(v, "name"); len(errors) > 0 {
+			t.Fatalf("%q should be a valid SQS non-fifo queue Name", v)
 		}
 	}
 
@@ -1078,8 +1086,12 @@ func TestValidateSQSQueueName(t *testing.T) {
 		strings.Repeat("W", 81), // length > 80
 	}
 	for _, v := range invalidNames {
-		if errors := validateSQSQueueName(v, "name"); len(errors) == 0 {
+		if _, errors := validateSQSQueueName(v, "name"); len(errors) == 0 {
 			t.Fatalf("%q should be an invalid SQS queue Name", v)
+		}
+
+		if errors := validateSQSNonFifoQueueName(v, "name"); len(errors) == 0 {
+			t.Fatalf("%q should be an invalid SQS non-fifo queue Name", v)
 		}
 	}
 }
@@ -1097,6 +1109,10 @@ func TestValidateSQSFifoQueueName(t *testing.T) {
 		fmt.Sprintf("%s.fifo", strings.Repeat("W", 75)),
 	}
 	for _, v := range validNames {
+		if _, errors := validateSQSQueueName(v, "name"); len(errors) > 0 {
+			t.Fatalf("%q should be a valid SQS queue Name", v)
+		}
+
 		if errors := validateSQSFifoQueueName(v, "name"); len(errors) > 0 {
 			t.Fatalf("%q should be a valid SQS FIFO queue Name: %v", v, errors)
 		}
@@ -1115,6 +1131,10 @@ func TestValidateSQSFifoQueueName(t *testing.T) {
 		strings.Repeat("W", 81), // length > 80
 	}
 	for _, v := range invalidNames {
+		if _, errors := validateSQSQueueName(v, "name"); len(errors) == 0 {
+			t.Fatalf("%q should be an invalid SQS queue Name", v)
+		}
+
 		if errors := validateSQSFifoQueueName(v, "name"); len(errors) == 0 {
 			t.Fatalf("%q should be an invalid SQS FIFO queue Name: %v", v, errors)
 		}
@@ -2085,6 +2105,50 @@ func TestValidateDbOptionGroupNamePrefix(t *testing.T) {
 	}
 }
 
+func TestValidateDbParamGroupName(t *testing.T) {
+	cases := []struct {
+		Value    string
+		ErrCount int
+	}{
+		{
+			Value:    "tEsting123",
+			ErrCount: 1,
+		},
+		{
+			Value:    "testing123!",
+			ErrCount: 1,
+		},
+		{
+			Value:    "1testing123",
+			ErrCount: 1,
+		},
+		{
+			Value:    "testing--123",
+			ErrCount: 1,
+		},
+		{
+			Value:    "testing_123",
+			ErrCount: 1,
+		},
+		{
+			Value:    "testing123-",
+			ErrCount: 1,
+		},
+		{
+			Value:    randomString(256),
+			ErrCount: 1,
+		},
+	}
+
+	for _, tc := range cases {
+		_, errors := validateDbParamGroupName(tc.Value, "aws_db_parameter_group_name")
+
+		if len(errors) != tc.ErrCount {
+			t.Fatalf("Expected the DB Parameter Group Name to trigger a validation error")
+		}
+	}
+}
+
 func TestValidateOpenIdURL(t *testing.T) {
 	cases := []struct {
 		Value    string
@@ -2945,56 +3009,6 @@ func TestValidateCognitoUserGroupName(t *testing.T) {
 		_, errors := validateCognitoUserGroupName(s, "name")
 		if len(errors) == 0 {
 			t.Fatalf("%q should not be a valid Cognito User Pool Group Name: %v", s, errors)
-		}
-	}
-}
-
-func TestValidateServiceDiscoveryServiceDnsRecordsType(t *testing.T) {
-	validTypes := []string{
-		"SRV",
-		"A",
-		"AAAA",
-	}
-	for _, v := range validTypes {
-		_, errors := validateServiceDiscoveryServiceDnsRecordsType(v, "")
-		if len(errors) != 0 {
-			t.Fatalf("%q should be a valid Service Discovery DNS Records Type: %q", v, errors)
-		}
-	}
-
-	invalidTypes := []string{
-		"hoge",
-		"srv",
-	}
-	for _, v := range invalidTypes {
-		_, errors := validateServiceDiscoveryServiceDnsRecordsType(v, "")
-		if len(errors) == 0 {
-			t.Fatalf("%q should be an invalid Service Discovery DNS Records Type", v)
-		}
-	}
-}
-
-func TestValidateServiceDiscoveryServiceHealthCheckConfigType(t *testing.T) {
-	validTypes := []string{
-		"HTTP",
-		"HTTPS",
-		"TCP",
-	}
-	for _, v := range validTypes {
-		_, errors := validateServiceDiscoveryServiceHealthCheckConfigType(v, "")
-		if len(errors) != 0 {
-			t.Fatalf("%q should be a valid Service Discovery Health Check Config Type: %q", v, errors)
-		}
-	}
-
-	invalidTypes := []string{
-		"hoge",
-		"tcp",
-	}
-	for _, v := range invalidTypes {
-		_, errors := validateServiceDiscoveryServiceHealthCheckConfigType(v, "")
-		if len(errors) == 0 {
-			t.Fatalf("%q should be an invalid Service Discovery Health Check Config Type", v)
 		}
 	}
 }

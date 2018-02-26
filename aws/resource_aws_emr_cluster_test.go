@@ -24,7 +24,10 @@ func TestAccAWSEMRCluster_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccAWSEmrClusterConfig(r),
-				Check:  testAccCheckAWSEmrClusterExists("aws_emr_cluster.tf-test-cluster", &cluster),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckAWSEmrClusterExists("aws_emr_cluster.tf-test-cluster", &cluster),
+					resource.TestCheckResourceAttr("aws_emr_cluster.tf-test-cluster", "scale_down_behavior", "TERMINATE_AT_TASK_COMPLETION"),
+				),
 			},
 		},
 	})
@@ -611,7 +614,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags {
-    Name = "emr_test_cts"
+    Name = "terraform-testacc-emr-cluster-bootstrap"
   }
 }
 
@@ -701,12 +704,8 @@ POLICY
 
 func testAccAWSEmrClusterConfig(r int) string {
 	return fmt.Sprintf(`
-provider "aws" {
-  region = "us-west-2"
-}
-
 resource "aws_emr_cluster" "tf-test-cluster" {
-  name          = "emr-test-%d"
+  name          = "emr-test-%[1]d"
   release_label = "emr-4.6.0"
   applications  = ["Spark"]
 
@@ -731,6 +730,8 @@ resource "aws_emr_cluster" "tf-test-cluster" {
   keep_job_flow_alive_when_no_steps = true
   termination_protection = false
 
+  scale_down_behavior = "TERMINATE_AT_TASK_COMPLETION"
+
   bootstrap_action {
     path = "s3://elasticmapreduce/bootstrap-actions/run-if"
     name = "runif"
@@ -747,7 +748,7 @@ resource "aws_emr_cluster" "tf-test-cluster" {
 }
 
 resource "aws_security_group" "allow_all" {
-  name        = "allow_all_%d"
+  name        = "allow_all_%[1]d"
   description = "Allow all inbound traffic"
   vpc_id      = "${aws_vpc.main.id}"
 
@@ -781,7 +782,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags {
-    Name = "emr_test_%d"
+    Name = "terraform-testacc-emr-cluster"
   }
 }
 
@@ -790,7 +791,7 @@ resource "aws_subnet" "main" {
   cidr_block = "168.31.0.0/20"
 
   tags {
-    Name = "emr_test_%d"
+    Name = "emr_test_%[1]d"
   }
 }
 
@@ -820,7 +821,7 @@ resource "aws_main_route_table_association" "a" {
 
 # IAM role for EMR Service
 resource "aws_iam_role" "iam_emr_default_role" {
-  name = "iam_emr_default_role_%d"
+  name = "iam_emr_default_role_%[1]d"
 
   assume_role_policy = <<EOT
 {
@@ -845,7 +846,7 @@ resource "aws_iam_role_policy_attachment" "service-attach" {
 }
 
 resource "aws_iam_policy" "iam_emr_default_policy" {
-  name = "iam_emr_default_policy_%d"
+  name = "iam_emr_default_policy_%[1]d"
 
   policy = <<EOT
 {
@@ -915,7 +916,7 @@ EOT
 
 # IAM Role for EC2 Instance Profile
 resource "aws_iam_role" "iam_emr_profile_role" {
-  name = "iam_emr_profile_role_%d"
+  name = "iam_emr_profile_role_%[1]d"
 
   assume_role_policy = <<EOT
 {
@@ -935,7 +936,7 @@ EOT
 }
 
 resource "aws_iam_instance_profile" "emr_profile" {
-  name  = "emr_profile_%d"
+  name  = "emr_profile_%[1]d"
   role = "${aws_iam_role.iam_emr_profile_role.name}"
 }
 
@@ -945,7 +946,7 @@ resource "aws_iam_role_policy_attachment" "profile-attach" {
 }
 
 resource "aws_iam_policy" "iam_emr_profile_policy" {
-  name = "iam_emr_profile_policy_%d"
+  name = "iam_emr_profile_policy_%[1]d"
 
   policy = <<EOT
 {
@@ -984,7 +985,7 @@ EOT
 
 # IAM Role for autoscaling
 resource "aws_iam_role" "emr-autoscaling-role" {
-  name               = "EMR_AutoScaling_DefaultRole_%d"
+  name               = "EMR_AutoScaling_DefaultRole_%[1]d"
   assume_role_policy = "${data.aws_iam_policy_document.emr-autoscaling-role-policy.json}"
 }
 
@@ -1003,7 +1004,7 @@ resource "aws_iam_role_policy_attachment" "emr-autoscaling-role" {
   role       = "${aws_iam_role.emr-autoscaling-role.name}"
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforAutoScalingRole"
 }
-`, r, r, r, r, r, r, r, r, r, r)
+`, r)
 }
 
 func testAccAWSEmrClusterConfig_SecurityConfiguration(r int) string {
@@ -1089,7 +1090,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags {
-    Name = "emr_test_%d"
+    Name = "terraform-testacc-emr-cluster-security-configuration"
   }
 }
 
@@ -1353,17 +1354,13 @@ resource "aws_kms_key" "foo" {
 }
 POLICY
 }
-`, r, r, r, r, r, r, r, r, r, r, r)
+`, r, r, r, r, r, r, r, r, r, r)
 }
 
 func testAccAWSEmrClusterConfigInstanceGroups(r int) string {
 	return fmt.Sprintf(`
-provider "aws" {
-  region = "us-west-2"
-}
-
 resource "aws_emr_cluster" "tf-test-cluster" {
-  name          = "emr-test-%d"
+  name          = "emr-test-%[1]d"
   release_label = "emr-4.6.0"
   applications  = ["Spark"]
 
@@ -1385,6 +1382,39 @@ resource "aws_emr_cluster" "tf-test-cluster" {
         volumes_per_instance = 1
       }
       bid_price = "0.30"
+      autoscaling_policy = <<EOT
+{
+  "Constraints": {
+    "MinCapacity": 1,
+    "MaxCapacity": 2
+  },
+  "Rules": [
+    {
+      "Name": "ScaleOutMemoryPercentage",
+      "Description": "Scale out if YARNMemoryAvailablePercentage is less than 15",
+      "Action": {
+        "SimpleScalingPolicyConfiguration": {
+          "AdjustmentType": "CHANGE_IN_CAPACITY",
+          "ScalingAdjustment": 1,
+          "CoolDown": 300
+        }
+      },
+      "Trigger": {
+        "CloudWatchAlarmDefinition": {
+          "ComparisonOperator": "LESS_THAN",
+          "EvaluationPeriods": 1,
+          "MetricName": "YARNMemoryAvailablePercentage",
+          "Namespace": "AWS/ElasticMapReduce",
+          "Period": 300,
+          "Statistic": "AVERAGE",
+          "Threshold": 15.0,
+          "Unit": "PERCENT"
+        }
+      }
+    }
+  ]
+}
+EOT
     },
     {
       instance_role = "MASTER"
@@ -1418,7 +1448,7 @@ resource "aws_emr_cluster" "tf-test-cluster" {
 }
 
 resource "aws_security_group" "allow_all" {
-  name        = "allow_all_%d"
+  name        = "allow_all_%[1]d"
   description = "Allow all inbound traffic"
   vpc_id      = "${aws_vpc.main.id}"
 
@@ -1452,7 +1482,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags {
-    Name = "emr_test_%d"
+    Name = "terraform-testacc-emr-cluster-instance-groups"
   }
 }
 
@@ -1461,7 +1491,7 @@ resource "aws_subnet" "main" {
   cidr_block = "168.31.0.0/20"
 
   tags {
-    Name = "emr_test_%d"
+    Name = "emr_test_%[1]d"
   }
 }
 
@@ -1491,7 +1521,7 @@ resource "aws_main_route_table_association" "a" {
 
 # IAM role for EMR Service
 resource "aws_iam_role" "iam_emr_default_role" {
-  name = "iam_emr_default_role_%d"
+  name = "iam_emr_default_role_%[1]d"
 
   assume_role_policy = <<EOT
 {
@@ -1516,7 +1546,7 @@ resource "aws_iam_role_policy_attachment" "service-attach" {
 }
 
 resource "aws_iam_policy" "iam_emr_default_policy" {
-  name = "iam_emr_default_policy_%d"
+  name = "iam_emr_default_policy_%[1]d"
 
   policy = <<EOT
 {
@@ -1586,7 +1616,7 @@ EOT
 
 # IAM Role for EC2 Instance Profile
 resource "aws_iam_role" "iam_emr_profile_role" {
-  name = "iam_emr_profile_role_%d"
+  name = "iam_emr_profile_role_%[1]d"
 
   assume_role_policy = <<EOT
 {
@@ -1606,7 +1636,7 @@ EOT
 }
 
 resource "aws_iam_instance_profile" "emr_profile" {
-  name  = "emr_profile_%d"
+  name  = "emr_profile_%[1]d"
   role = "${aws_iam_role.iam_emr_profile_role.name}"
 }
 
@@ -1616,7 +1646,7 @@ resource "aws_iam_role_policy_attachment" "profile-attach" {
 }
 
 resource "aws_iam_policy" "iam_emr_profile_policy" {
-  name = "iam_emr_profile_policy_%d"
+  name = "iam_emr_profile_policy_%[1]d"
 
   policy = <<EOT
 {
@@ -1655,7 +1685,7 @@ EOT
 
 # IAM Role for autoscaling
 resource "aws_iam_role" "emr-autoscaling-role" {
-  name               = "EMR_AutoScaling_DefaultRole_%d"
+  name               = "EMR_AutoScaling_DefaultRole_%[1]d"
   assume_role_policy = "${data.aws_iam_policy_document.emr-autoscaling-role-policy.json}"
 }
 
@@ -1674,8 +1704,7 @@ resource "aws_iam_role_policy_attachment" "emr-autoscaling-role" {
   role       = "${aws_iam_role.emr-autoscaling-role.name}"
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforAutoScalingRole"
 }
-
-`, r, r, r, r, r, r, r, r, r, r)
+`, r)
 }
 
 func testAccAWSEmrClusterConfigInstanceFleets(r int) string {
@@ -2021,12 +2050,8 @@ resource "aws_iam_role_policy_attachment" "emr-autoscaling-role" {
 
 func testAccAWSEmrClusterConfigTerminationPolicy(r int, term string) string {
 	return fmt.Sprintf(`
-provider "aws" {
-  region = "us-west-2"
-}
-
 resource "aws_emr_cluster" "tf-test-cluster" {
-  name          = "emr-test-%d"
+  name          = "emr-test-%[1]d"
   release_label = "emr-4.6.0"
   applications  = ["Spark"]
 
@@ -2049,7 +2074,7 @@ resource "aws_emr_cluster" "tf-test-cluster" {
   }
 
   keep_job_flow_alive_when_no_steps = true
-  termination_protection = %s
+  termination_protection = %[2]s
 
   bootstrap_action {
     path = "s3://elasticmapreduce/bootstrap-actions/run-if"
@@ -2066,7 +2091,7 @@ resource "aws_emr_cluster" "tf-test-cluster" {
 }
 
 resource "aws_security_group" "allow_all" {
-  name        = "allow_all_%d"
+  name        = "allow_all_%[1]d"
   description = "Allow all inbound traffic"
   vpc_id      = "${aws_vpc.main.id}"
 
@@ -2100,7 +2125,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags {
-    Name = "emr_test_%d"
+    Name = "terraform-testacc-emr-cluster-termination-policy"
   }
 }
 
@@ -2109,7 +2134,7 @@ resource "aws_subnet" "main" {
   cidr_block = "168.31.0.0/20"
 
   tags {
-    Name = "emr_test_%d"
+    Name = "emr_test_%[1]d"
   }
 }
 
@@ -2139,7 +2164,7 @@ resource "aws_main_route_table_association" "a" {
 
 # IAM role for EMR Service
 resource "aws_iam_role" "iam_emr_default_role" {
-  name = "iam_emr_default_role_%d"
+  name = "iam_emr_default_role_%[1]d"
 
   assume_role_policy = <<EOT
 {
@@ -2164,7 +2189,7 @@ resource "aws_iam_role_policy_attachment" "service-attach" {
 }
 
 resource "aws_iam_policy" "iam_emr_default_policy" {
-  name = "iam_emr_default_policy_%d"
+  name = "iam_emr_default_policy_%[1]d"
 
   policy = <<EOT
 {
@@ -2234,7 +2259,7 @@ EOT
 
 # IAM Role for EC2 Instance Profile
 resource "aws_iam_role" "iam_emr_profile_role" {
-  name = "iam_emr_profile_role_%d"
+  name = "iam_emr_profile_role_%[1]d"
 
   assume_role_policy = <<EOT
 {
@@ -2254,7 +2279,7 @@ EOT
 }
 
 resource "aws_iam_instance_profile" "emr_profile" {
-  name  = "emr_profile_%d"
+  name  = "emr_profile_%[1]d"
   role = "${aws_iam_role.iam_emr_profile_role.name}"
 }
 
@@ -2264,7 +2289,7 @@ resource "aws_iam_role_policy_attachment" "profile-attach" {
 }
 
 resource "aws_iam_policy" "iam_emr_profile_policy" {
-  name = "iam_emr_profile_policy_%d"
+  name = "iam_emr_profile_policy_%[1]d"
 
   policy = <<EOT
 {
@@ -2304,7 +2329,7 @@ EOT
 
 # IAM Role for autoscaling
 resource "aws_iam_role" "emr-autoscaling-role" {
-  name               = "EMR_AutoScaling_DefaultRole_%d"
+  name               = "EMR_AutoScaling_DefaultRole_%[1]d"
   assume_role_policy = "${data.aws_iam_policy_document.emr-autoscaling-role-policy.json}"
 }
 
@@ -2324,7 +2349,7 @@ resource "aws_iam_role_policy_attachment" "emr-autoscaling-role" {
   role       = "${aws_iam_role.emr-autoscaling-role.name}"
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforAutoScalingRole"
 }
-`, r, term, r, r, r, r, r, r, r, r, r)
+`, r, term)
 }
 
 func testAccAWSEmrClusterConfigVisibleToAllUsersUpdated(r int) string {
@@ -2408,7 +2433,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags {
-    Name = "emr_test_%d"
+    Name = "terraform-testacc-emr-cluster-visible-to-all-users"
   }
 }
 
@@ -2632,17 +2657,13 @@ resource "aws_iam_role_policy_attachment" "emr-autoscaling-role" {
   role       = "${aws_iam_role.emr-autoscaling-role.name}"
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforAutoScalingRole"
 }
-`, r, r, r, r, r, r, r, r, r, r)
+`, r, r, r, r, r, r, r, r, r)
 }
 
 func testAccAWSEmrClusterConfigUpdatedTags(r int) string {
 	return fmt.Sprintf(`
-provider "aws" {
-  region = "us-west-2"
-}
-
 resource "aws_emr_cluster" "tf-test-cluster" {
-  name          = "emr-test-%d"
+  name          = "emr-test-%[1]d"
   release_label = "emr-4.6.0"
   applications  = ["Spark"]
 
@@ -2681,7 +2702,7 @@ resource "aws_emr_cluster" "tf-test-cluster" {
 }
 
 resource "aws_security_group" "allow_all" {
-  name        = "allow_all_%d"
+  name        = "allow_all_%[1]d"
   description = "Allow all inbound traffic"
   vpc_id      = "${aws_vpc.main.id}"
 
@@ -2715,7 +2736,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags {
-    Name = "emr_test_%d"
+    Name = "terraform-testacc-emr-cluster-updated-tags"
   }
 }
 
@@ -2724,7 +2745,7 @@ resource "aws_subnet" "main" {
   cidr_block = "168.31.0.0/20"
 
   tags {
-    Name = "emr_test_%d"
+    Name = "emr_test_%[1]d"
   }
 }
 
@@ -2754,7 +2775,7 @@ resource "aws_main_route_table_association" "a" {
 
 # IAM role for EMR Service
 resource "aws_iam_role" "iam_emr_default_role" {
-  name = "iam_emr_default_role_%d"
+  name = "iam_emr_default_role_%[1]d"
 
   assume_role_policy = <<EOT
 {
@@ -2779,7 +2800,7 @@ resource "aws_iam_role_policy_attachment" "service-attach" {
 }
 
 resource "aws_iam_policy" "iam_emr_default_policy" {
-  name = "iam_emr_default_policy_%d"
+  name = "iam_emr_default_policy_%[1]d"
 
   policy = <<EOT
 {
@@ -2849,7 +2870,7 @@ EOT
 
 # IAM Role for EC2 Instance Profile
 resource "aws_iam_role" "iam_emr_profile_role" {
-  name = "iam_emr_profile_role_%d"
+  name = "iam_emr_profile_role_%[1]d"
 
   assume_role_policy = <<EOT
 {
@@ -2869,7 +2890,7 @@ EOT
 }
 
 resource "aws_iam_instance_profile" "emr_profile" {
-  name  = "emr_profile_%d"
+  name  = "emr_profile_%[1]d"
   role = "${aws_iam_role.iam_emr_profile_role.name}"
 }
 
@@ -2879,7 +2900,7 @@ resource "aws_iam_role_policy_attachment" "profile-attach" {
 }
 
 resource "aws_iam_policy" "iam_emr_profile_policy" {
-  name = "iam_emr_profile_policy_%d"
+  name = "iam_emr_profile_policy_%[1]d"
 
   policy = <<EOT
 {
@@ -2918,7 +2939,7 @@ EOT
 
 # IAM Role for autoscaling
 resource "aws_iam_role" "emr-autoscaling-role" {
-  name               = "EMR_AutoScaling_DefaultRole_%d"
+  name               = "EMR_AutoScaling_DefaultRole_%[1]d"
   assume_role_policy = "${data.aws_iam_policy_document.emr-autoscaling-role-policy.json}"
 }
 
@@ -2938,7 +2959,7 @@ resource "aws_iam_role_policy_attachment" "emr-autoscaling-role" {
   role       = "${aws_iam_role.emr-autoscaling-role.name}"
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforAutoScalingRole"
 }
-`, r, r, r, r, r, r, r, r, r, r)
+`, r)
 }
 
 func testAccAWSEmrClusterConfigUpdatedRootVolumeSize(r int) string {
@@ -3023,7 +3044,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags {
-    Name = "emr_test_%d"
+    Name = "terraform-testacc-emr-cluster-updated-root-volume-size"
   }
 }
 
@@ -3246,7 +3267,7 @@ resource "aws_iam_role_policy_attachment" "emr-autoscaling-role" {
   role       = "${aws_iam_role.emr-autoscaling-role.name}"
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforAutoScalingRole"
 }
-`, r, r, r, r, r, r, r, r, r, r)
+`, r, r, r, r, r, r, r, r, r)
 }
 
 func testAccAWSEmrClusterConfigS3Logging(rInt int) string {
@@ -3258,6 +3279,9 @@ resource "aws_s3_bucket" "test" {
 
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/24"
+  tags {
+    Name = "terraform-testacc-emr-cluster-s3-logging"
+  }
 }
 
 resource "aws_subnet" "test" {
