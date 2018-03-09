@@ -2,12 +2,85 @@ package aws
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/service/cognitoidentity"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
+
+func TestValidateRFC3339TimeString(t *testing.T) {
+	testCases := []struct {
+		val         interface{}
+		expectedErr *regexp.Regexp
+	}{
+		{
+			val: "2018-03-01T00:00:00Z",
+		},
+		{
+			val: "2018-03-01T00:00:00-05:00",
+		},
+		{
+			val: "2018-03-01T00:00:00+05:00",
+		},
+		{
+			val:         "03/01/2018",
+			expectedErr: regexp.MustCompile(regexp.QuoteMeta(`cannot parse "1/2018" as "2006"`)),
+		},
+		{
+			val:         "03-01-2018",
+			expectedErr: regexp.MustCompile(regexp.QuoteMeta(`cannot parse "1-2018" as "2006"`)),
+		},
+		{
+			val:         "2018-03-01",
+			expectedErr: regexp.MustCompile(regexp.QuoteMeta(`cannot parse "" as "T"`)),
+		},
+		{
+			val:         "2018-03-01T",
+			expectedErr: regexp.MustCompile(regexp.QuoteMeta(`cannot parse "" as "15"`)),
+		},
+		{
+			val:         "2018-03-01T00:00:00",
+			expectedErr: regexp.MustCompile(regexp.QuoteMeta(`cannot parse "" as "Z07:00"`)),
+		},
+		{
+			val:         "2018-03-01T00:00:00Z05:00",
+			expectedErr: regexp.MustCompile(regexp.QuoteMeta(`extra text: 05:00`)),
+		},
+		{
+			val:         "2018-03-01T00:00:00Z-05:00",
+			expectedErr: regexp.MustCompile(regexp.QuoteMeta(`extra text: -05:00`)),
+		},
+	}
+
+	matchErr := func(errs []error, r *regexp.Regexp) bool {
+		// err must match one provided
+		for _, err := range errs {
+			if r.MatchString(err.Error()) {
+				return true
+			}
+		}
+
+		return false
+	}
+
+	for i, tc := range testCases {
+		_, errs := validateRFC3339TimeString(tc.val, "test_property")
+
+		if len(errs) == 0 && tc.expectedErr == nil {
+			continue
+		}
+
+		if len(errs) != 0 && tc.expectedErr == nil {
+			t.Fatalf("expected test case %d to produce no errors, got %v", i, errs)
+		}
+
+		if !matchErr(errs, tc.expectedErr) {
+			t.Fatalf("expected test case %d to produce error matching \"%s\", got %v", i, tc.expectedErr, errs)
+		}
+	}
+}
 
 func TestValidateInstanceUserDataSize(t *testing.T) {
 	validValues := []string{
@@ -342,53 +415,6 @@ func TestValidateCIDRNetworkAddress(t *testing.T) {
 				t.Fatalf("%d/%d: Expected err: %q, to include %q",
 					i+1, len(cases), errs[0], tc.ExpectedErrSubstr)
 			}
-		}
-	}
-}
-
-func TestValidateHTTPMethod(t *testing.T) {
-	type testCases struct {
-		Value    string
-		ErrCount int
-	}
-
-	invalidCases := []testCases{
-		{
-			Value:    "incorrect",
-			ErrCount: 1,
-		},
-		{
-			Value:    "delete",
-			ErrCount: 1,
-		},
-	}
-
-	for _, tc := range invalidCases {
-		_, errors := validateHTTPMethod(tc.Value, "http_method")
-		if len(errors) != tc.ErrCount {
-			t.Fatalf("Expected %q to trigger a validation error.", tc.Value)
-		}
-	}
-
-	validCases := []testCases{
-		{
-			Value:    "ANY",
-			ErrCount: 0,
-		},
-		{
-			Value:    "DELETE",
-			ErrCount: 0,
-		},
-		{
-			Value:    "OPTIONS",
-			ErrCount: 0,
-		},
-	}
-
-	for _, tc := range validCases {
-		_, errors := validateHTTPMethod(tc.Value, "http_method")
-		if len(errors) != tc.ErrCount {
-			t.Fatalf("Expected %q not to trigger a validation error.", tc.Value)
 		}
 	}
 }
@@ -1006,49 +1032,6 @@ func TestValidateCloudFormationTemplate(t *testing.T) {
 
 	for _, tc := range validCases {
 		_, errors := validateCloudFormationTemplate(tc.Value, "template")
-		if len(errors) != tc.ErrCount {
-			t.Fatalf("Expected %q not to trigger a validation error.", tc.Value)
-		}
-	}
-}
-
-func TestValidateApiGatewayIntegrationType(t *testing.T) {
-	type testCases struct {
-		Value    string
-		ErrCount int
-	}
-
-	invalidCases := []testCases{
-		{
-			Value:    "incorrect",
-			ErrCount: 1,
-		},
-		{
-			Value:    "aws_proxy",
-			ErrCount: 1,
-		},
-	}
-
-	for _, tc := range invalidCases {
-		_, errors := validateApiGatewayIntegrationType(tc.Value, "types")
-		if len(errors) != tc.ErrCount {
-			t.Fatalf("Expected %q to trigger a validation error.", tc.Value)
-		}
-	}
-
-	validCases := []testCases{
-		{
-			Value:    "MOCK",
-			ErrCount: 0,
-		},
-		{
-			Value:    "AWS_PROXY",
-			ErrCount: 0,
-		},
-	}
-
-	for _, tc := range validCases {
-		_, errors := validateApiGatewayIntegrationType(tc.Value, "types")
 		if len(errors) != tc.ErrCount {
 			t.Fatalf("Expected %q not to trigger a validation error.", tc.Value)
 		}
@@ -1798,34 +1781,6 @@ func TestValidateIamRoleProfileNamePrefix(t *testing.T) {
 		_, errors := validateIamRolePolicyNamePrefix(s, "name_prefix")
 		if len(errors) == 0 {
 			t.Fatalf("%q should not be a valid IAM role policy name prefix: %v", s, errors)
-		}
-	}
-}
-
-func TestValidateApiGatewayUsagePlanQuotaSettingsPeriod(t *testing.T) {
-	validEntries := []string{
-		"DAY",
-		"WEEK",
-		"MONTH",
-	}
-
-	invalidEntries := []string{
-		"fooBAR",
-		"foobar45Baz",
-		"foobar45Baz@!",
-	}
-
-	for _, v := range validEntries {
-		_, errors := validateApiGatewayUsagePlanQuotaSettingsPeriod(v, "name")
-		if len(errors) != 0 {
-			t.Fatalf("%q should be a valid API Gateway Quota Settings Period: %v", v, errors)
-		}
-	}
-
-	for _, v := range invalidEntries {
-		_, errors := validateApiGatewayUsagePlanQuotaSettingsPeriod(v, "name")
-		if len(errors) == 0 {
-			t.Fatalf("%q should not be a API Gateway Quota Settings Period", v)
 		}
 	}
 }
@@ -2722,64 +2677,6 @@ func TestValidateCognitoRoleMappingsRulesConfiguration(t *testing.T) {
 	}
 }
 
-func TestValidateCognitoRoleMappingsAmbiguousRoleResolution(t *testing.T) {
-	validValues := []string{
-		cognitoidentity.AmbiguousRoleResolutionTypeAuthenticatedRole,
-		cognitoidentity.AmbiguousRoleResolutionTypeDeny,
-	}
-
-	for _, s := range validValues {
-		_, errors := validateCognitoRoleMappingsAmbiguousRoleResolution(s, "ambiguous_role_resolution")
-		if len(errors) > 0 {
-			t.Fatalf("%q should be a valid Cognito Ambiguous Role Resolution type: %v", s, errors)
-		}
-	}
-
-	invalidValues := []string{
-		"foo",
-		"123",
-		"foo-bar",
-		"foo_bar123",
-	}
-
-	for _, s := range invalidValues {
-		_, errors := validateCognitoRoleMappingsAmbiguousRoleResolution(s, "ambiguous_role_resolution")
-		if len(errors) == 0 {
-			t.Fatalf("%q should not be a valid Cognito Ambiguous Role Resolution type: %v", s, errors)
-		}
-	}
-}
-
-func TestValidateCognitoRoleMappingsRulesMatchType(t *testing.T) {
-	validValues := []string{
-		cognitoidentity.MappingRuleMatchTypeEquals,
-		cognitoidentity.MappingRuleMatchTypeContains,
-		cognitoidentity.MappingRuleMatchTypeStartsWith,
-		cognitoidentity.MappingRuleMatchTypeNotEqual,
-	}
-
-	for _, s := range validValues {
-		_, errors := validateCognitoRoleMappingsRulesMatchType(s, "match_type")
-		if len(errors) > 0 {
-			t.Fatalf("%q should be a valid Cognito Role Mappings Rules Match Type: %v", s, errors)
-		}
-	}
-
-	invalidValues := []string{
-		"foo",
-		"123",
-		"foo-bar",
-		"foo_bar123",
-	}
-
-	for _, s := range invalidValues {
-		_, errors := validateCognitoRoleMappingsRulesMatchType(s, "match_type")
-		if len(errors) == 0 {
-			t.Fatalf("%q should not be a valid Cognito Role Mappings Rules Match Type: %v", s, errors)
-		}
-	}
-}
-
 func TestValidateSecurityGroupRuleDescription(t *testing.T) {
 	validDescriptions := []string{
 		"testrule",
@@ -2802,34 +2699,6 @@ func TestValidateSecurityGroupRuleDescription(t *testing.T) {
 		_, errors := validateSecurityGroupRuleDescription(v, "description")
 		if len(errors) == 0 {
 			t.Fatalf("%q should be an invalid security group rule description", v)
-		}
-	}
-}
-
-func TestValidateCognitoRoleMappingsType(t *testing.T) {
-	validValues := []string{
-		cognitoidentity.RoleMappingTypeToken,
-		cognitoidentity.RoleMappingTypeRules,
-	}
-
-	for _, s := range validValues {
-		_, errors := validateCognitoRoleMappingsType(s, "match_type")
-		if len(errors) > 0 {
-			t.Fatalf("%q should be a valid Cognito Role Mappings Type: %v", s, errors)
-		}
-	}
-
-	invalidValues := []string{
-		"foo",
-		"123",
-		"foo-bar",
-		"foo_bar123",
-	}
-
-	for _, s := range invalidValues {
-		_, errors := validateCognitoRoleMappingsType(s, "match_type")
-		if len(errors) == 0 {
-			t.Fatalf("%q should not be a valid Cognito Role Mappings Type: %v", s, errors)
 		}
 	}
 }
@@ -2884,6 +2753,53 @@ func TestValidateDxConnectionBandWidth(t *testing.T) {
 		_, errors := validateDxConnectionBandWidth(s, "match_type")
 		if len(errors) == 0 {
 			t.Fatalf("%s should not be a valid Direct Connect Connection Bandwidth: %v", s, errors)
+		}
+	}
+}
+
+func TestValidateKmsKey(t *testing.T) {
+	cases := []struct {
+		Value    string
+		ErrCount int
+	}{
+		{
+			Value:    "arbitrary-uuid-1234",
+			ErrCount: 0,
+		},
+		{
+			Value:    "arn:aws:kms:us-west-2:111122223333:key/arbitrary-uuid-1234",
+			ErrCount: 0,
+		},
+		{
+			Value:    "alias/arbitrary-key",
+			ErrCount: 0,
+		},
+		{
+			Value:    "alias/arbitrary/key",
+			ErrCount: 0,
+		},
+		{
+			Value:    "arn:aws:kms:us-west-2:111122223333:alias/arbitrary-key",
+			ErrCount: 0,
+		},
+		{
+			Value:    "arn:aws:kms:us-west-2:111122223333:alias/arbitrary/key",
+			ErrCount: 0,
+		},
+		{
+			Value:    "$%wrongkey",
+			ErrCount: 1,
+		},
+		{
+			Value:    "arn:aws:lamda:foo:bar:key/xyz",
+			ErrCount: 1,
+		},
+	}
+
+	for _, tc := range cases {
+		_, errors := validateKmsKey(tc.Value, "key_id")
+		if len(errors) != tc.ErrCount {
+			t.Fatalf("%q validation failed: %v", tc.Value, errors)
 		}
 	}
 }
