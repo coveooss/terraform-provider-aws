@@ -27,6 +27,7 @@ func TestAccAWSEMRCluster_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSEmrClusterExists("aws_emr_cluster.tf-test-cluster", &cluster),
 					resource.TestCheckResourceAttr("aws_emr_cluster.tf-test-cluster", "scale_down_behavior", "TERMINATE_AT_TASK_COMPLETION"),
+					resource.TestCheckResourceAttr("aws_emr_cluster.tf-test-cluster", "step.#", "0"),
 				),
 			},
 		},
@@ -88,6 +89,64 @@ func TestAccAWSEMRCluster_security_config(t *testing.T) {
 			{
 				Config: testAccAWSEmrClusterConfig_SecurityConfiguration(r),
 				Check:  testAccCheckAWSEmrClusterExists("aws_emr_cluster.tf-test-cluster", &cluster),
+			},
+		},
+	})
+}
+
+func TestAccAWSEMRCluster_Step_Basic(t *testing.T) {
+	var cluster emr.Cluster
+	rInt := acctest.RandInt()
+	resourceName := "aws_emr_cluster.tf-test-cluster"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckAWSEmrDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAWSEmrClusterConfig_Step_Single(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckAWSEmrClusterExists(resourceName, &cluster),
+					resource.TestCheckResourceAttr(resourceName, "step.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "step.0.action_on_failure", "TERMINATE_CLUSTER"),
+					resource.TestCheckResourceAttr(resourceName, "step.0.hadoop_jar_step.0.args.0", "state-pusher-script"),
+					resource.TestCheckResourceAttr(resourceName, "step.0.hadoop_jar_step.0.jar", "command-runner.jar"),
+					resource.TestCheckResourceAttr(resourceName, "step.0.hadoop_jar_step.0.main_class", ""),
+					resource.TestCheckResourceAttr(resourceName, "step.0.hadoop_jar_step.0.properties.%", "0"),
+					resource.TestCheckResourceAttr(resourceName, "step.0.name", "Setup Hadoop Debugging"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccAWSEMRCluster_Step_Multiple(t *testing.T) {
+	var cluster emr.Cluster
+	rInt := acctest.RandInt()
+	resourceName := "aws_emr_cluster.tf-test-cluster"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckAWSEmrDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAWSEmrClusterConfig_Step_Multiple(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckAWSEmrClusterExists(resourceName, &cluster),
+					resource.TestCheckResourceAttr(resourceName, "step.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "step.0.action_on_failure", "TERMINATE_CLUSTER"),
+					resource.TestCheckResourceAttr(resourceName, "step.0.hadoop_jar_step.0.args.0", "state-pusher-script"),
+					resource.TestCheckResourceAttr(resourceName, "step.0.hadoop_jar_step.0.jar", "command-runner.jar"),
+					resource.TestCheckResourceAttr(resourceName, "step.0.name", "Setup Hadoop Debugging"),
+					resource.TestCheckResourceAttr(resourceName, "step.1.action_on_failure", "CONTINUE"),
+					resource.TestCheckResourceAttr(resourceName, "step.1.hadoop_jar_step.0.args.0", "spark-example"),
+					resource.TestCheckResourceAttr(resourceName, "step.1.hadoop_jar_step.0.args.1", "SparkPi"),
+					resource.TestCheckResourceAttr(resourceName, "step.1.hadoop_jar_step.0.args.2", "10"),
+					resource.TestCheckResourceAttr(resourceName, "step.1.hadoop_jar_step.0.jar", "command-runner.jar"),
+					resource.TestCheckResourceAttr(resourceName, "step.1.name", "Spark Step"),
+				),
 			},
 		},
 	})
@@ -388,16 +447,17 @@ func testAccCheckAWSEmrClusterExists(n string, v *emr.Cluster) resource.TestChec
 			return fmt.Errorf("EMR error: %v", err)
 		}
 
-		if describe.Cluster != nil &&
-			*describe.Cluster.Id != rs.Primary.ID {
-			return fmt.Errorf("EMR cluser not found")
+		if describe.Cluster == nil || *describe.Cluster.Id != rs.Primary.ID {
+			return fmt.Errorf("EMR cluster %q not found", rs.Primary.ID)
 		}
 
 		*v = *describe.Cluster
 
-		if describe.Cluster != nil &&
-			*describe.Cluster.Status.State != emr.ClusterStateWaiting {
-			return fmt.Errorf("EMR cluser is not up yet")
+		if describe.Cluster.Status != nil {
+			state := aws.StringValue(describe.Cluster.Status.State)
+			if state != emr.ClusterStateRunning && state != emr.ClusterStateWaiting {
+				return fmt.Errorf("EMR cluster %q is not RUNNING or WAITING, currently: %s", rs.Primary.ID, state)
+			}
 		}
 
 		return nil
@@ -627,7 +687,7 @@ resource "aws_subnet" "main" {
   cidr_block = "168.31.0.0/20"
 
   tags {
-    Name = "emr_test_cts"
+    Name = "tf-acc-emr-cluster-bootstrap"
   }
 }
 
@@ -795,7 +855,7 @@ resource "aws_subnet" "main" {
   cidr_block = "168.31.0.0/20"
 
   tags {
-    Name = "emr_test_%[1]d"
+    Name = "tf-acc-emr-cluster"
   }
 }
 
@@ -1107,7 +1167,7 @@ resource "aws_subnet" "main" {
   vpc_id            = "${aws_vpc.main.id}"
 
   tags {
-    Name = "terraform-testacc-emr-cluster-kerberos-cluster-dedicated-kdc"
+    Name = "tf-acc-emr-cluster-kerberos-cluster-dedicated-kdc"
   }
 }
 
@@ -1227,7 +1287,7 @@ resource "aws_subnet" "main" {
   cidr_block = "168.31.0.0/20"
 
   tags {
-    Name = "emr_test_%d"
+    Name = "tf-acc-emr-cluster-security-configuration"
   }
 }
 
@@ -1482,7 +1542,153 @@ resource "aws_kms_key" "foo" {
 }
 POLICY
 }
-`, r, r, r, r, r, r, r, r, r, r)
+`, r, r, r, r, r, r, r, r, r)
+}
+
+const testAccAWSEmrClusterConfig_Step_DebugLoggingStep = `
+  # Example from: https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-debugging.html
+  step {
+    action_on_failure = "TERMINATE_CLUSTER"
+    name              = "Setup Hadoop Debugging"
+
+    hadoop_jar_step {
+      jar  = "command-runner.jar"
+      args = ["state-pusher-script"]
+    }
+  }
+`
+
+const testAccAWSEmrClusterConfig_Step_SparkStep = `
+  # Example from: https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-submit-step.html
+  step {
+    action_on_failure = "CONTINUE"
+    name              = "Spark Step"
+
+    hadoop_jar_step {
+      jar  = "command-runner.jar"
+      args = ["spark-example", "SparkPi", "10"]
+    }
+  }
+`
+
+func testAccAWSEmrClusterConfig_Step_Multiple(rInt int) string {
+	stepConfig := testAccAWSEmrClusterConfig_Step_DebugLoggingStep + testAccAWSEmrClusterConfig_Step_SparkStep
+	return testAccAWSEmrClusterConfig_Step(rInt, stepConfig)
+}
+
+func testAccAWSEmrClusterConfig_Step_Single(rInt int) string {
+	return testAccAWSEmrClusterConfig_Step(rInt, testAccAWSEmrClusterConfig_Step_DebugLoggingStep)
+}
+
+func testAccAWSEmrClusterConfig_Step(rInt int, stepConfig string) string {
+	return fmt.Sprintf(`
+provider "aws" {
+  region = "us-west-2"
+}
+
+data "aws_availability_zones" "available" {}
+
+resource "aws_emr_cluster" "tf-test-cluster" {
+  applications                      = ["Spark"]
+  core_instance_count               = 1
+  core_instance_type                = "c4.large"
+  keep_job_flow_alive_when_no_steps = true
+  log_uri                           = "s3://${aws_s3_bucket.test.bucket}/"
+  master_instance_type              = "c4.large"
+  name                              = "emr-test-%[1]d"
+  release_label                     = "emr-5.12.0"
+  service_role                      = "EMR_DefaultRole"
+  termination_protection            = false
+
+  ec2_attributes {
+    emr_managed_master_security_group = "${aws_security_group.allow_all.id}"
+    emr_managed_slave_security_group  = "${aws_security_group.allow_all.id}"
+    instance_profile                  = "EMR_EC2_DefaultRole"
+    subnet_id                         = "${aws_subnet.main.0.id}"
+  }
+
+%[2]s
+
+  depends_on = ["aws_main_route_table_association.a"]
+}
+
+resource "aws_s3_bucket" "test" {
+  bucket = "tf-acc-test-%[1]d"
+  force_destroy = true
+}
+
+resource "aws_security_group" "allow_all" {
+  name        = "allow_all_%[1]d"
+  description = "Allow all inbound traffic"
+  vpc_id      = "${aws_vpc.main.id}"
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  depends_on = ["aws_subnet.main"]
+
+  lifecycle {
+    ignore_changes = ["ingress", "egress"]
+  }
+
+  tags {
+    Name = "emr_test"
+  }
+}
+
+resource "aws_vpc" "main" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+
+  tags {
+    Name = "terraform-testacc-emr-cluster-step"
+  }
+}
+
+resource "aws_subnet" "main" {
+  availability_zone = "${element(data.aws_availability_zones.available.names, count.index)}"
+  count             = 2
+  cidr_block        = "10.0.${count.index}.0/24"
+  vpc_id            = "${aws_vpc.main.id}"
+
+  tags {
+    Name = "terraform-testacc-emr-cluster-step"
+  }
+}
+
+resource "aws_internet_gateway" "gw" {
+  vpc_id = "${aws_vpc.main.id}"
+
+  tags {
+    Name = "terraform-testacc-emr-cluster-step"
+  }
+}
+
+resource "aws_route_table" "r" {
+  vpc_id = "${aws_vpc.main.id}"
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = "${aws_internet_gateway.gw.id}"
+  }
+}
+
+resource "aws_main_route_table_association" "a" {
+  route_table_id = "${aws_route_table.r.id}"
+  vpc_id         = "${aws_vpc.main.id}"
+}
+`, rInt, stepConfig)
 }
 
 func testAccAWSEmrClusterConfigInstanceGroups(r int) string {
@@ -1619,7 +1825,7 @@ resource "aws_subnet" "main" {
   cidr_block = "168.31.0.0/20"
 
   tags {
-    Name = "emr_test_%[1]d"
+    Name = "tf-acc-emr-cluster-instance-groups"
   }
 }
 
@@ -2262,7 +2468,7 @@ resource "aws_subnet" "main" {
   cidr_block = "168.31.0.0/20"
 
   tags {
-    Name = "emr_test_%[1]d"
+    Name = "tf-acc-emr-cluster-termination-policy"
   }
 }
 
@@ -2570,7 +2776,7 @@ resource "aws_subnet" "main" {
   cidr_block = "168.31.0.0/20"
 
   tags {
-    Name = "emr_test_%d"
+    Name = "tf-acc-emr-cluster-visible-to-all-users"
   }
 }
 
@@ -2785,7 +2991,7 @@ resource "aws_iam_role_policy_attachment" "emr-autoscaling-role" {
   role       = "${aws_iam_role.emr-autoscaling-role.name}"
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforAutoScalingRole"
 }
-`, r, r, r, r, r, r, r, r, r)
+`, r, r, r, r, r, r, r, r)
 }
 
 func testAccAWSEmrClusterConfigUpdatedTags(r int) string {
@@ -2873,7 +3079,7 @@ resource "aws_subnet" "main" {
   cidr_block = "168.31.0.0/20"
 
   tags {
-    Name = "emr_test_%[1]d"
+    Name = "tf-acc-emr-cluster-updated-tags"
   }
 }
 
@@ -3181,7 +3387,7 @@ resource "aws_subnet" "main" {
   cidr_block = "168.31.0.0/20"
 
   tags {
-    Name = "emr_test_%d"
+    Name = "tf-acc-emr-cluster-updated-root-volume-size"
   }
 }
 
@@ -3395,7 +3601,7 @@ resource "aws_iam_role_policy_attachment" "emr-autoscaling-role" {
   role       = "${aws_iam_role.emr-autoscaling-role.name}"
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforAutoScalingRole"
 }
-`, r, r, r, r, r, r, r, r, r)
+`, r, r, r, r, r, r, r, r)
 }
 
 func testAccAWSEmrClusterConfigS3Logging(rInt int) string {
@@ -3415,6 +3621,9 @@ resource "aws_vpc" "test" {
 resource "aws_subnet" "test" {
   vpc_id = "${aws_vpc.test.id}"
   cidr_block = "10.0.0.0/24"
+  tags {
+    Name = "tf-acc-emr-cluster-s3-logging"
+  }
 }
 
 resource "aws_internet_gateway" "main" {
@@ -3564,7 +3773,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags {
-    Name = "emr_test_%d"
+    Name = "terraform-testacc-emr-cluster-custom-ami-id"
   }
 }
 
@@ -3573,7 +3782,7 @@ resource "aws_subnet" "main" {
   cidr_block = "168.31.0.0/20"
 
   tags {
-    Name = "emr_test_%d"
+    Name = "tf-acc-emr-cluster-custom-ami-id"
   }
 }
 
@@ -3812,5 +4021,5 @@ data "aws_ami" "emr-custom-ami" {
     values = ["hvm"]
   }
 }
-`, r, r, r, r, r, r, r, r, r, r)
+`, r, r, r, r, r, r, r, r)
 }

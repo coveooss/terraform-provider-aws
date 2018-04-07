@@ -29,6 +29,11 @@ server reboots. See the AWS Docs on [RDS Maintenance][2] for more information.
 the raw state as plain-text. [Read more about sensitive data in
 state](/docs/state/sensitive-data.html).
 
+## RDS Instance Class Types
+Amazon RDS supports three types of instance classes: Standard, Memory Optimized,
+and Burstable Performance. For more information please read the AWS RDS documentation
+about [DB Instance Class Types](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.DBInstanceClass.html)
+
 ## Example Usage
 
 ```hcl
@@ -36,13 +41,12 @@ resource "aws_db_instance" "default" {
   allocated_storage    = 10
   storage_type         = "gp2"
   engine               = "mysql"
-  engine_version       = "5.6.17"
-  instance_class       = "db.t1.micro"
+  engine_version       = "5.7"
+  instance_class       = "db.t2.micro"
   name                 = "mydb"
   username             = "foo"
-  password             = "bar"
-  db_subnet_group_name = "my_database_subnet_group"
-  parameter_group_name = "default.mysql5.6"
+  password             = "foobarbaz"
+  parameter_group_name = "default.mysql5.7"
 }
 ```
 
@@ -85,7 +89,9 @@ be created in the VPC associated with the DB subnet group. If unspecified, will
 be created in the `default` VPC, or in EC2 Classic, if available.
 * `engine` - (Required unless a `snapshot_identifier` or `replicate_source_db`
 is provided) The database engine to use.
-* `engine_version` - (Optional) The engine version to use.
+* `engine_version` - (Optional) The engine version to use. If `auto_minor_version_upgrade`
+is enabled, you can provide a prefix of the version such as `5.7` (for `5.7.10`) and
+this attribute will ignore differences in the patch version automatically (e.g. `5.7.17`).
 * `final_snapshot_identifier` - (Optional) The name of your final DB snapshot
 when this DB instance is deleted. If omitted, no final snapshot will be made.
 * `iam_database_authentication_enabled` - (Optional) Specifies whether or

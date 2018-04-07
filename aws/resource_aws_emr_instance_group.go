@@ -59,7 +59,27 @@ func resourceAwsEMRInstanceGroup() *schema.Resource {
 				Type:     schema.TypeSet,
 				Optional: true,
 				ForceNew: true,
-				Elem:     ebsConfigurationSchema(),
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"iops": {
+							Type:     schema.TypeInt,
+							Optional: true,
+						},
+						"size": {
+							Type:     schema.TypeInt,
+							Required: true,
+						},
+						"type": {
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validateAwsEmrEbsVolumeType(),
+						},
+						"volumes_per_instance": {
+							Type:     schema.TypeInt,
+							Optional: true,
+						},
+					},
+				},
 			},
 		},
 	}
