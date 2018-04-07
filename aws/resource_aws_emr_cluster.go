@@ -460,7 +460,7 @@ func ebsConfigurationSchema() *schema.Resource {
 			"type": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validateAwsEmrEbsVolumeType,
+				ValidateFunc: validateAwsEmrEbsVolumeType(),
 			},
 			"volumes_per_instance": {
 				Type:     schema.TypeInt,
