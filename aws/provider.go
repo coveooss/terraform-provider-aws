@@ -161,6 +161,7 @@ func Provider() terraform.ResourceProvider {
 
 		DataSourcesMap: map[string]*schema.Resource{
 			"aws_acm_certificate":                  dataSourceAwsAcmCertificate(),
+			"aws_acmpca_certificate_authority":     dataSourceAwsAcmpcaCertificateAuthority(),
 			"aws_ami":                              dataSourceAwsAmi(),
 			"aws_ami_ids":                          dataSourceAwsAmiIds(),
 			"aws_api_gateway_rest_api":             dataSourceAwsApiGatewayRestApi(),
@@ -255,6 +256,7 @@ func Provider() terraform.ResourceProvider {
 		ResourcesMap: map[string]*schema.Resource{
 			"aws_acm_certificate":                          resourceAwsAcmCertificate(),
 			"aws_acm_certificate_validation":               resourceAwsAcmCertificateValidation(),
+			"aws_acmpca_certificate_authority":             resourceAwsAcmpcaCertificateAuthority(),
 			"aws_ami":                                      resourceAwsAmi(),
 			"aws_ami_copy":                                 resourceAwsAmiCopy(),
 			"aws_ami_from_instance":                        resourceAwsAmiFromInstance(),
@@ -394,6 +396,7 @@ func Provider() terraform.ResourceProvider {
 			"aws_gamelift_fleet":                           resourceAwsGameliftFleet(),
 			"aws_glacier_vault":                            resourceAwsGlacierVault(),
 			"aws_glue_catalog_database":                    resourceAwsGlueCatalogDatabase(),
+			"aws_glue_catalog_table":                       resourceAwsGlueCatalogTable(),
 			"aws_glue_connection":                          resourceAwsGlueConnection(),
 			"aws_glue_job":                                 resourceAwsGlueJob(),
 			"aws_guardduty_detector":                       resourceAwsGuardDutyDetector(),
