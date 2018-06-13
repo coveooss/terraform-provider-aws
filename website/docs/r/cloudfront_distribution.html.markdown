@@ -36,7 +36,7 @@ resource "aws_s3_bucket" "b" {
 
 resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
-    domain_name = "${aws_s3_bucket.b.bucket_domain_name}"
+    domain_name = "${aws_s3_bucket.b.bucket_regional_domain_name}"
     origin_id   = "myS3Origin"
 
     s3_origin_config {
@@ -420,7 +420,7 @@ The arguments of `geo_restriction` are:
 
 ## Attribute Reference
 
-The following attributes are exported:
+In addition to all arguments above, the following attributes are exported:
 
   * `id` - The identifier for the distribution. For example: `EDFDVBD632BHDS5`.
 
