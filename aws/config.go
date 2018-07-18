@@ -70,6 +70,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/aws/aws-sdk-go/service/lexmodelbuildingservice"
 	"github.com/aws/aws-sdk-go/service/lightsail"
+	"github.com/aws/aws-sdk-go/service/macie"
 	"github.com/aws/aws-sdk-go/service/mediastore"
 	"github.com/aws/aws-sdk-go/service/mq"
 	"github.com/aws/aws-sdk-go/service/neptune"
@@ -210,6 +211,7 @@ type AWSClient struct {
 	elastictranscoderconn *elastictranscoder.ElasticTranscoder
 	lambdaconn            *lambda.Lambda
 	lightsailconn         *lightsail.Lightsail
+	macieconn             *macie.Macie
 	mqconn                *mq.MQ
 	opsworksconn          *opsworks.OpsWorks
 	organizationsconn     *organizations.Organizations
@@ -244,11 +246,6 @@ func (c *AWSClient) S3() *s3.S3 {
 
 func (c *AWSClient) DynamoDB() *dynamodb.DynamoDB {
 	return c.dynamodbconn
-}
-
-func (c *AWSClient) IsGovCloud() bool {
-	_, isGovCloud := endpoints.PartitionForRegion([]endpoints.Partition{endpoints.AwsUsGovPartition()}, c.region)
-	return isGovCloud
 }
 
 func (c *AWSClient) IsChinaCloud() bool {
@@ -506,6 +503,7 @@ func (c *Config) Client() (interface{}, error) {
 	client.lambdaconn = lambda.New(awsLambdaSess)
 	client.lexmodelconn = lexmodelbuildingservice.New(sess)
 	client.lightsailconn = lightsail.New(sess)
+	client.macieconn = macie.New(sess)
 	client.mqconn = mq.New(sess)
 	client.neptuneconn = neptune.New(sess)
 	client.opsworksconn = opsworks.New(sess)
