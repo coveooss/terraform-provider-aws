@@ -104,24 +104,30 @@ func resourceAwsSsmParameterRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("type", param.Type)
 	d.Set("value", param.Value)
 
-	// COVEO HACK: This is to prevent from using the DescribeParameters call. It is very heavy
-	// remove when we are less reliant on SSM
-	err = ssmconn.GetParameterHistoryPages(&ssm.GetParameterHistoryInput{
-		Name:           aws.String(d.Id()),
-		WithDecryption: aws.Bool(false),
-		MaxResults:     aws.Int64(50),
-	}, func(page *ssm.GetParameterHistoryOutput, lastPage bool) bool {
-		if lastPage {
-			param := page.Parameters[len(page.Parameters)-1]
-			d.Set("key_id", param.KeyId)
-			d.Set("description", param.Description)
-			d.Set("allowed_pattern", param.AllowedPattern)
-		}
-		return !lastPage
-	})
+	describeParamsInput := &ssm.DescribeParametersInput{
+		ParameterFilters: []*ssm.ParameterStringFilter{
+			&ssm.ParameterStringFilter{
+				Key:    aws.String("Name"),
+				Option: aws.String("Equals"),
+				Values: []*string{aws.String(d.Get("name").(string))},
+			},
+		},
+	}
+	describeResp, err := ssmconn.DescribeParameters(describeParamsInput)
 	if err != nil {
 		return fmt.Errorf("error getting SSM parameter: %s", err)
 	}
+
+	if describeResp == nil || len(describeResp.Parameters) == 0 || describeResp.Parameters[0] == nil {
+		log.Printf("[WARN] SSM Parameter %q not found, removing from state", d.Id())
+		d.SetId("")
+		return nil
+	}
+
+	detail := describeResp.Parameters[0]
+	d.Set("key_id", detail.KeyId)
+	d.Set("description", detail.Description)
+	d.Set("allowed_pattern", detail.AllowedPattern)
 
 	if tagList, err := ssmconn.ListTagsForResource(&ssm.ListTagsForResourceInput{
 		ResourceId:   aws.String(d.Get("name").(string)),
