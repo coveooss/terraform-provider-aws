@@ -8,8 +8,9 @@ description: |-
 
 # aws_flow_log
 
-Provides a VPC/Subnet/ENI Flow Log to capture IP traffic for a specific network
-interface, subnet, or VPC. Logs are sent to a CloudWatch Log Group.
+Provides a VPC, Subnet, or ENI Flow Log to capture IP traffic for a list of VPC,
+subnet, or network interface IDs. Logs are sent to either a CloudWatch Log Group
+or an S3 bucket.
 
 ## Example Usage
 
@@ -74,14 +75,25 @@ EOF
 
 The following arguments are supported:
 
-* `log_group_name` - (Required) The name of the CloudWatch log group
-* `iam_role_arn` - (Required) The ARN for the IAM role that's used to post flow
-  logs to a CloudWatch Logs log group
-* `vpc_id` - (Optional) VPC ID to attach to
-* `subnet_id` - (Optional) Subnet ID to attach to
-* `eni_id` - (Optional) Elastic Network Interface ID to attach to
+* `resource_type` - (Required) The type of resource on which to create the flow log.
+  Valid Values: `VPC`, `Subnet`, `NetworkInterface`
+* `resource_id` - (Required) One or more subnet, network interface, or VPC IDs.
+  Constraints: Maximum of 1000 resources
 * `traffic_type` - (Required) The type of traffic to capture. Valid values:
-  `ACCEPT`,`REJECT`, `ALL`
+  `ACCEPT`, `REJECT`, `ALL`
+* `log_destination_type` - (Optional) Type of destination to which the flow log
+  data is to be published. Flow log data can be published to CloudWatch Logs or
+  Amazon S3. To publish flow log data to CloudWatch Logs, specify `cloud-watch-logs`.
+  To publish flow log data to Amazon S3, specify `s3`. Default: `cloud-watch-logs`
+* `log_destination` - (Optional) The destination to which the flow log data is to
+  be published. Flow log data can be published to an CloudWatch Logs log group or
+  an Amazon S3 bucket. The value specified for this parameter depends on the value
+  specified for `log_destination_type`.
+* `log_group_name` - (Optional) The name of the CloudWatch Log group to which the
+  flow log data is to be published.
+* `iam_role_arn` - (Optional) The ARN for the IAM role that's used to post flow
+  logs to a CloudWatch Logs log group. **Required** if the sending logs to
+  CloudWatch Logs.
 
 ## Attributes Reference
 
