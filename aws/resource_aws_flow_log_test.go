@@ -218,3 +218,57 @@ resource "aws_flow_log" "test_flow_log_subnet" {
 }
 `, rInt, rInt)
 }
+
+func TestAWSFlowLogMigrateState(t *testing.T) {
+	cases := map[string]struct {
+		StateVersion int
+		ID           string
+		Attributes   map[string]string
+		ExpectedID   string
+		ExpectedType string
+		Meta         interface{}
+	}{
+		"vpc_id": {
+			StateVersion: 0,
+			ID:           "tf-testing-file",
+			Attributes: map[string]string{
+				"vpc_id": "test-vpc-id",
+			},
+			ExpectedID:   "test-vpc-id",
+			ExpectedType: "vpc",
+		},
+		"subnet_id": {
+			StateVersion: 0,
+			ID:           "tf-testing-file",
+			Attributes: map[string]string{
+				"subnet_id": "test-subnet-id",
+			},
+			ExpectedID:   "test-subnet-id",
+			ExpectedType: "subnet",
+		},
+	}
+
+	for tn, tc := range cases {
+		is := &terraform.InstanceState{
+			ID:         tc.ID,
+			Attributes: tc.Attributes,
+		}
+		is, err := resourceAwsFlowLogMigrateState(tc.StateVersion, is, tc.Meta)
+
+		if err != nil {
+			t.Fatalf("bad: %s, err: %#v", tn, err)
+		}
+
+		if is.Attributes["resource_type"] != tc.ExpectedType {
+			t.Fatalf("Bad resource_type migration: %s\n\n expected: %s", is.Attributes["resource_type"], tc.ExpectedType)
+		}
+
+		if is.Attributes["resource_id.#"] != "1" {
+			t.Fatalf("Bad resource_id migration: %s\n\n expected: %s", is.Attributes["resource_id.#"], "1")
+		}
+
+		if is.Attributes[tn] != "" {
+			t.Fatalf("Bad migration: %s\n\n expected value for %s to be removed", is.Attributes[tn], tn)
+		}
+	}
+}
