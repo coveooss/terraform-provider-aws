@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 )
 
 func resourceAwsFlowLog() *schema.Resource {
@@ -18,45 +19,69 @@ func resourceAwsFlowLog() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
+		SchemaVersion: 1,
 
 		Schema: map[string]*schema.Schema{
 			"iam_role_arn": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 				ForceNew: true,
+			},
+
+			"log_destination": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validateArn,
+			},
+
+			"log_destination_type":{
+				Type:     schema.TypeString,
+				Default:  ec2.LogDestinationTypeCloudWatchLogs,
+				Optional: true,
+				ForceNew: true,
+				ValidateFunc: validation.StringInSlice([]string{
+					ec2.LogDestinationTypeCloudWatchLogs,
+					ec2.LogDestinationTypeS3,
+				}, false),
 			},
 
 			"log_group_name": {
 				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+
+			"resource_id": {
+				Type:     schema.TypeSet,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Set:      schema.HashString,
+				MinItems: 1,
+				MaxItems: 1000,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"vpc_id": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ForceNew:      true,
-				ConflictsWith: []string{"subnet_id", "eni_id"},
-			},
-
-			"subnet_id": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ForceNew:      true,
-				ConflictsWith: []string{"eni_id", "vpc_id"},
-			},
-
-			"eni_id": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ForceNew:      true,
-				ConflictsWith: []string{"subnet_id", "vpc_id"},
+			"resource_type": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+				ValidateFunc: validation.StringInSlice([]string{
+					ec2.ResourceTypeVpc,
+					ec2.ResourceTypeSubnet,
+					ec2.ResourceTypeNetworkInterface,
+				}, false),
 			},
 
 			"traffic_type": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				ValidateFunc: validation.StringInSlice([]string{
+					ec2.TrafficTypeAccept,
+					ec2.TrafficTypeReject,
+					ec2.TrafficTypeAll,
+				}, false),
 			},
 		},
 	}
@@ -65,34 +90,13 @@ func resourceAwsFlowLog() *schema.Resource {
 func resourceAwsLogFlowCreate(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).ec2conn
 
-	types := []struct {
-		ID   string
-		Type string
-	}{
-		{ID: d.Get("vpc_id").(string), Type: "VPC"},
-		{ID: d.Get("subnet_id").(string), Type: "Subnet"},
-		{ID: d.Get("eni_id").(string), Type: "NetworkInterface"},
-	}
-
-	var resourceId string
-	var resourceType string
-	for _, t := range types {
-		if t.ID != "" {
-			resourceId = t.ID
-			resourceType = t.Type
-			break
-		}
-	}
-
-	if resourceId == "" || resourceType == "" {
-		return fmt.Errorf("Error: Flow Logs require either a VPC, Subnet, or ENI ID")
-	}
-
 	opts := &ec2.CreateFlowLogsInput{
 		DeliverLogsPermissionArn: aws.String(d.Get("iam_role_arn").(string)),
+		LogDestination:           aws.String(d.Get("log_destination").(string)),
+		LogDestinationType:       aws.String(d.Get("log_destination_type").(string)),
 		LogGroupName:             aws.String(d.Get("log_group_name").(string)),
-		ResourceIds:              []*string{aws.String(resourceId)},
-		ResourceType:             aws.String(resourceType),
+		ResourceIds:              aws.StringSlice(d.Get("resource_id").([]string)),
+		ResourceType:             aws.String(d.Get("resource_type").(string)),
 		TrafficType:              aws.String(d.Get("traffic_type").(string)),
 	}
 
@@ -136,17 +140,16 @@ func resourceAwsLogFlowRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("traffic_type", fl.TrafficType)
 	d.Set("log_group_name", fl.LogGroupName)
 	d.Set("iam_role_arn", fl.DeliverLogsPermissionArn)
+	d.Set("log_destination", fl.LogDestination)
+	d.Set("log_destination_type", fl.LogDestinationType)
+	d.Set("resource_id", fl.ResourceId)
 
-	var resourceKey string
 	if strings.HasPrefix(*fl.ResourceId, "vpc-") {
-		resourceKey = "vpc_id"
+		d.Set("resource_type", ec2.ResourceTypeVpc)
 	} else if strings.HasPrefix(*fl.ResourceId, "subnet-") {
-		resourceKey = "subnet_id"
+		d.Set("resource_type", ec2.ResourceTypeSubnet)
 	} else if strings.HasPrefix(*fl.ResourceId, "eni-") {
-		resourceKey = "eni_id"
-	}
-	if resourceKey != "" {
-		d.Set(resourceKey, fl.ResourceId)
+		d.Set("resource_type", ec2.ResourceTypeNetworkInterface)
 	}
 
 	return nil
