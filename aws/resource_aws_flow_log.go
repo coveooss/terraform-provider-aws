@@ -19,6 +19,7 @@ func resourceAwsFlowLog() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
+		MigrateState:  resourceAwsFlowLogMigrateState,
 		SchemaVersion: 1,
 
 		Schema: map[string]*schema.Schema{
