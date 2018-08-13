@@ -23,6 +23,31 @@ func resourceAwsFlowLog() *schema.Resource {
 		SchemaVersion: 1,
 
 		Schema: map[string]*schema.Schema{
+
+			"eni_id": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"subnet_id", "vpc_id", "resource_ids", "resource_type"},
+				Deprecated:    "Attribute eni_id is deprecated on aws_flow_log resources. Use resource_type in combinaton with resource_ids instead.",
+			},
+
+			"subnet_id": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"eni_id", "vpc_id", "resource_ids", "resource_type"},
+				Deprecated:    "Attribute subnet_id is deprecated on aws_flow_log resources. Use resource_type in combinaton with resource_ids instead.",
+			},
+
+			"vpc_id": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"eni_id", "subnet_id", "resource_ids", "resource_type"},
+				Deprecated:    "Attribute vpc_id is deprecated on aws_flow_log resources. Use resource_type in combinaton with resource_ids instead.",
+			},
+
 			"iam_role_arn": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -53,7 +78,7 @@ func resourceAwsFlowLog() *schema.Resource {
 				ForceNew: true,
 			},
 
-			"resource_id": {
+			"resource_ids": &schema.Schema{
 				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Set:      schema.HashString,
@@ -96,7 +121,7 @@ func resourceAwsLogFlowCreate(d *schema.ResourceData, meta interface{}) error {
 		LogDestination:           aws.String(d.Get("log_destination").(string)),
 		LogDestinationType:       aws.String(d.Get("log_destination_type").(string)),
 		LogGroupName:             aws.String(d.Get("log_group_name").(string)),
-		ResourceIds:              aws.StringSlice(d.Get("resource_id").([]string)),
+		ResourceIds:              expandStringList(d.Get("resource_ids").(*schema.Set).List()),
 		ResourceType:             aws.String(d.Get("resource_type").(string)),
 		TrafficType:              aws.String(d.Get("traffic_type").(string)),
 	}
@@ -143,7 +168,7 @@ func resourceAwsLogFlowRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("iam_role_arn", fl.DeliverLogsPermissionArn)
 	d.Set("log_destination", fl.LogDestination)
 	d.Set("log_destination_type", fl.LogDestinationType)
-	d.Set("resource_id", fl.ResourceId)
+	d.Set("resource_ids", fl.ResourceId)
 
 	if strings.HasPrefix(*fl.ResourceId, "vpc-") {
 		d.Set("resource_type", ec2.ResourceTypeVpc)

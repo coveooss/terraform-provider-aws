@@ -263,8 +263,8 @@ func TestAWSFlowLogMigrateState(t *testing.T) {
 			t.Fatalf("Bad resource_type migration: %s\n\n expected: %s", is.Attributes["resource_type"], tc.ExpectedType)
 		}
 
-		if is.Attributes["resource_id.#"] != "1" {
-			t.Fatalf("Bad resource_id migration: %s\n\n expected: %s", is.Attributes["resource_id.#"], "1")
+		if is.Attributes["resource_ids.#"] != "1" {
+			t.Fatalf("Bad resource_ids migration: %s\n\n expected: %s", is.Attributes["resource_ids.#"], "1")
 		}
 
 		if is.Attributes[tn] != "" {

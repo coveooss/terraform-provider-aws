@@ -52,7 +52,7 @@ func migrateAwsFlowLogStateV0toV1(is *terraform.InstanceState) (*terraform.Insta
 
 		// Convert the old format that restricted to a single resource to
 		// the new format that supports a list of resources
-		if err := writer.WriteField([]string{"resource_id"}, []string{is.Attributes[t.OldID]}); err != nil {
+		if err := writer.WriteField([]string{"resource_ids"}, []string{is.Attributes[t.OldID]}); err != nil {
 			return is, err
 		}
 
