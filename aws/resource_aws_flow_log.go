@@ -28,7 +28,7 @@ func resourceAwsFlowLog() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
-				ConflictsWith: []string{"subnet_id", "vpc_id", "resource_ids", "resource_type"},
+				ConflictsWith: []string{"subnet_id", "vpc_id"},
 				Deprecated:    "Attribute eni_id is deprecated on aws_flow_log resources. Use resource_type in combinaton with resource_ids instead.",
 			},
 
@@ -36,7 +36,7 @@ func resourceAwsFlowLog() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
-				ConflictsWith: []string{"eni_id", "vpc_id", "resource_ids", "resource_type"},
+				ConflictsWith: []string{"eni_id", "vpc_id"},
 				Deprecated:    "Attribute subnet_id is deprecated on aws_flow_log resources. Use resource_type in combinaton with resource_ids instead.",
 			},
 
@@ -44,7 +44,7 @@ func resourceAwsFlowLog() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
-				ConflictsWith: []string{"eni_id", "subnet_id", "resource_ids", "resource_type"},
+				ConflictsWith: []string{"eni_id", "subnet_id"},
 				Deprecated:    "Attribute vpc_id is deprecated on aws_flow_log resources. Use resource_type in combinaton with resource_ids instead.",
 			},
 
@@ -76,6 +76,12 @@ func resourceAwsFlowLog() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					// Suppress diff if newer log_destination argument is the same as this legacy value
+					logGroupName := d.Get("log_destination")
+					logDestType := d.Get("log_destination_type")
+					return logGroupName == d.Get("log_group_name") && logDestType == ec2.LogDestinationTypeCloudWatchLogs
+				},
 			},
 
 			"resource_ids": &schema.Schema{
@@ -116,13 +122,42 @@ func resourceAwsFlowLog() *schema.Resource {
 func resourceAwsLogFlowCreate(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).ec2conn
 
+	var logDestType, logDest, resourceType *string
+	var resourceIDs []*string
+	if _, ok := d.GetOk("resource_type"); ok {
+		logDest = aws.String(d.Get("log_destination").(string))
+		logDestType = aws.String(d.Get("log_destination_type").(string))
+		resourceIDs = expandStringList(d.Get("resource_ids").(*schema.Set).List())
+		resourceType = aws.String(d.Get("resource_type").(string))
+	} else {
+		types := []struct {
+			ID   string
+			Type string
+		}{
+			{ID: d.Get("vpc_id").(string), Type: "VPC"},
+			{ID: d.Get("subnet_id").(string), Type: "Subnet"},
+			{ID: d.Get("eni_id").(string), Type: "NetworkInterface"},
+		}
+		for _, t := range types {
+			if t.ID != "" {
+				resourceIDs = []*string{aws.String(t.ID)}
+				resourceType = aws.String(t.Type)
+				break
+			}
+		}
+	}
+
+	if len(resourceIDs) == 0 || *resourceType == "" {
+		return fmt.Errorf("Error: Flow Logs require a VPC, Subnet, or ENI ID AND a list of one or more IDs")
+	}
+
 	opts := &ec2.CreateFlowLogsInput{
 		DeliverLogsPermissionArn: aws.String(d.Get("iam_role_arn").(string)),
-		LogDestination:           aws.String(d.Get("log_destination").(string)),
-		LogDestinationType:       aws.String(d.Get("log_destination_type").(string)),
+		LogDestination:           logDest,
+		LogDestinationType:       logDestType,
 		LogGroupName:             aws.String(d.Get("log_group_name").(string)),
-		ResourceIds:              expandStringList(d.Get("resource_ids").(*schema.Set).List()),
-		ResourceType:             aws.String(d.Get("resource_type").(string)),
+		ResourceIds:              resourceIDs,
+		ResourceType:             resourceType,
 		TrafficType:              aws.String(d.Get("traffic_type").(string)),
 	}
 
