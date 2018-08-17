@@ -801,6 +801,7 @@ func validateAwsEmrEbsVolumeType() schema.SchemaValidateFunc {
 		"gp2",
 		"io1",
 		"standard",
+		"st1",
 	}, false)
 }
 
