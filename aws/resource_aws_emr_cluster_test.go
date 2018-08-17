@@ -132,6 +132,7 @@ func TestAccAWSEMRCluster_Kerberos_ClusterDedicatedKdc(t *testing.T) {
 					resource.TestCheckResourceAttr("aws_emr_cluster.tf-test-cluster", "kerberos_attributes.#", "1"),
 					resource.TestCheckResourceAttr("aws_emr_cluster.tf-test-cluster", "kerberos_attributes.0.kdc_admin_password", password),
 					resource.TestCheckResourceAttr("aws_emr_cluster.tf-test-cluster", "kerberos_attributes.0.realm", "EC2.INTERNAL"),
+					resource.TestCheckResourceAttr("aws_emr_cluster.tf-test-cluster", "instance_fleet.#", "2"),
 				),
 			},
 		},
@@ -494,7 +495,7 @@ func testAccCheckAWSEmrDestroy(s *terraform.State) error {
 
 		if err == nil {
 			if describe.Cluster != nil &&
-				*describe.Cluster.Status.State == "WAITING" {
+				*describe.Cluster.Status.State == emr.ClusterStateWaiting {
 				return fmt.Errorf("EMR Cluster still exists")
 			}
 		}
@@ -3340,6 +3341,7 @@ resource "aws_iam_policy" "iam_emr_profile_policy" {
             "elasticmapreduce:ListBootstrapActions",
             "elasticmapreduce:ListClusters",
             "elasticmapreduce:ListInstanceGroups",
+            "elasticmapreduce:ListInstanceFleets",
             "elasticmapreduce:ListInstances",
             "elasticmapreduce:ListSteps",
             "kinesis:CreateStream",
@@ -3960,6 +3962,7 @@ resource "aws_iam_policy" "iam_emr_profile_policy" {
             "elasticmapreduce:ListBootstrapActions",
             "elasticmapreduce:ListClusters",
             "elasticmapreduce:ListInstanceGroups",
+            "elasticmapreduce:ListInstanceFleets",
             "elasticmapreduce:ListInstances",
             "elasticmapreduce:ListSteps",
             "kinesis:CreateStream",
@@ -4570,6 +4573,7 @@ resource "aws_iam_policy" "iam_emr_profile_policy" {
             "elasticmapreduce:ListBootstrapActions",
             "elasticmapreduce:ListClusters",
             "elasticmapreduce:ListInstanceGroups",
+            "elasticmapreduce:ListInstanceFleets",
             "elasticmapreduce:ListInstances",
             "elasticmapreduce:ListSteps",
             "kinesis:CreateStream",

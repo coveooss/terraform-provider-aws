@@ -6,7 +6,7 @@ description: |-
   Provides an Elastic MapReduce Cluster
 ---
 
-# aws_emr_cluster
+# aws\_emr\_cluster
 
 Provides an Elastic MapReduce Cluster, a web service that makes it easy to
 process large amounts of data efficiently. See [Amazon Elastic MapReduce Documentation](https://aws.amazon.com/documentation/elastic-mapreduce/)
@@ -173,6 +173,7 @@ resource "aws_emr_cluster" "example" {
 The following arguments are supported:
 
 * `name` - (Required) The name of the job flow
+* `hadoop_version` - (Optional) The Hadoop version for the cluster.
 * `release_label` - (Required) The release label for the Amazon EMR release
 * `master_instance_type` - (Optional) The EC2 instance type of the master node. Exactly one of `master_instance_type` and `instance_group` must be specified.
 * `scale_down_behavior` - (Optional) The way that individual Amazon EC2 instances terminate when an automatic scale-in activity occurs or an `instance group` is resized. 
@@ -225,7 +226,7 @@ EOF
 * `tags` - (Optional) list of tags to apply to the EMR Cluster
 
 
-## ec2_attributes
+## ec2\_attributes
 
 Attributes for the Amazon EC2 instances running the job flow
 
@@ -233,12 +234,15 @@ Attributes for the Amazon EC2 instances running the job flow
 	node as the user called `hadoop`
 * `subnet_id` - (Optional) VPC subnet id where you want the job flow to launch.
 Cannot specify the `cc1.4xlarge` instance type for nodes of a job flow launched in a Amazon VPC
+* `subnet_ids` - (Optional) Applies to clusters that use the instance fleet configuration. When multiple EC2 subnet IDs are specified, Amazon EMR evaluates them and launches instances in the optimal subnet.
 * `additional_master_security_groups` - (Optional) String containing a comma separated list of additional Amazon EC2 security group IDs for the master node
 * `additional_slave_security_groups` - (Optional) String containing a comma separated list of additional Amazon EC2 security group IDs for the slave nodes as a comma separated string
 * `emr_managed_master_security_group` - (Optional) Identifier of the Amazon EC2 EMR-Managed security group for the master node
 * `emr_managed_slave_security_group` - (Optional) Identifier of the Amazon EC2 EMR-Managed security group for the slave nodes
 * `service_access_security_group` - (Optional) Identifier of the Amazon EC2 service-access security group - required when the cluster runs on a private subnet
 * `instance_profile` - (Required) Instance Profile for EC2 instances of the cluster assume this role
+* `availability_zone` - (Optional) The Amazon EC2 Availability Zone for the cluster. `availability_zone` is used for uniform instance groups, while `availability_zones` (plural) is used for instance fleets.
+* `availability_zones` - (Optional) When multiple Availability Zones are specified, Amazon EMR evaluates them and launches instances in the optimal Availability Zone. `availability_zones` is used for instance fleets, while `availability_zone` (singular) is used for uniform instance groups. 
 
 ~> **NOTE on EMR-Managed security groups:** These security groups will have any
 missing inbound or outbound access rules added and maintained by AWS, to ensure
@@ -265,7 +269,7 @@ Attributes for Kerberos configuration
 * `kdc_admin_password` - (Required) The password used within the cluster for the kadmin service on the cluster-dedicated KDC, which maintains Kerberos principals, password policies, and keytabs for the cluster.
 * `realm` - (Required) The name of the Kerberos realm to which all nodes in a cluster belong. For example, `EC2.INTERNAL`
 
-## instance_group
+## instance\_group
 
 Attributes for each task instance group in the cluster
 
@@ -274,10 +278,22 @@ Attributes for each task instance group in the cluster
 * `instance_count` - (Optional) Target number of instances for the instance group
 * `name` - (Optional) Friendly name given to the instance group
 * `bid_price` - (Optional) If set, the bid price for each EC2 instance in the instance group, expressed in USD. By setting this attribute, the instance group is being declared as a Spot Instance, and will implicitly create a Spot request. Leave this blank to use On-Demand Instances. `bid_price` can not be set for the `MASTER` instance group, since that group must always be On-Demand
+* `ebs_optimized` (Optional) Indicates whether an Amazon EBS volume is EBS-optimized. Changing this forces a new resource to be created.
 * `ebs_config` - (Optional) A list of attributes for the EBS volumes attached to each instance in the instance group. Each `ebs_config` defined will result in additional EBS volumes being attached to _each_ instance in the instance group. Defined below
 * `autoscaling_policy` - (Optional) The autoscaling policy document. This is a JSON formatted string. See [EMR Auto Scaling](https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-automatic-scaling.html)
 
-## ebs_config
+## instance\_fleet
+
+Attributes for each instance fleet in the cluster (See <a href="/docs/providers/aws/r/emr_instance_fleet.html">aws_emr_instance_fleet</a> for more details)
+
+* `instance_fleet_type` - (Required) The node type that the instance fleet hosts. Valid values are `MASTER`, `CORE`, and `TASK`. Changing this forces a new resource to be created.
+* `instance_type_configs` - (Optional) The instance type configurations that define the EC2 instances in the instance fleet. Array of `instance_type_config` blocks. 
+* `launch_specifications` - (Optional) The launch specification for the instance fleet. 
+* `name` - (Optional) The friendly name of the instance fleet.
+* `target_on_demand_capacity` - (Optional) The target capacity of On-Demand units for the instance fleet, which determines how many On-Demand instances to provision.
+* `target_spot_capacity` - (Optional) The target capacity of Spot units for the instance fleet, which determines how many Spot instances to provision.
+
+## ebs\_config
 
 Attributes for the EBS volumes attached to each EC2 instance in the `instance_group`
 
@@ -287,7 +303,7 @@ Attributes for the EBS volumes attached to each EC2 instance in the `instance_gr
 * `volumes_per_instance` - (Optional) The number of EBS volumes with this configuration to attach to each EC2 instance in the instance group (default is 1)
 
 
-## bootstrap_action
+## bootstrap\_action
 
 * `name` - (Required) Name of the bootstrap action
 * `path` - (Required) Location of the script to run during a bootstrap action. Can be either a location in Amazon S3 or on a local file system

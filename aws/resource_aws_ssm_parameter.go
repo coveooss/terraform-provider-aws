@@ -115,7 +115,7 @@ func resourceAwsSsmParameterRead(d *schema.ResourceData, meta interface{}) error
 	}
 	describeResp, err := ssmconn.DescribeParameters(describeParamsInput)
 	if err != nil {
-		return fmt.Errorf("error describing SSM parameter: %s", err)
+		return fmt.Errorf("error getting SSM parameter: %s", err)
 	}
 
 	if describeResp == nil || len(describeResp.Parameters) == 0 || describeResp.Parameters[0] == nil {

@@ -85,37 +85,6 @@ func resourceAwsEMRInstanceGroup() *schema.Resource {
 	}
 }
 
-// Populates an emr.EbsConfiguration struct
-func readEmrEBSConfig(d *schema.ResourceData) *emr.EbsConfiguration {
-	result := &emr.EbsConfiguration{}
-	if v, ok := d.GetOk("ebs_optimized"); ok {
-		result.EbsOptimized = aws.Bool(v.(bool))
-	}
-
-	ebsConfigs := make([]*emr.EbsBlockDeviceConfig, 0)
-	if rawConfig, ok := d.GetOk("ebs_config"); ok {
-		configList := rawConfig.(*schema.Set).List()
-		for _, config := range configList {
-			conf := config.(map[string]interface{})
-			ebs := &emr.EbsBlockDeviceConfig{}
-			volumeSpec := &emr.VolumeSpecification{
-				SizeInGB:   aws.Int64(int64(conf["size"].(int))),
-				VolumeType: aws.String(conf["type"].(string)),
-			}
-			if v, ok := conf["iops"].(int); ok && v != 0 {
-				volumeSpec.Iops = aws.Int64(int64(v))
-			}
-			if v, ok := conf["volumes_per_instance"].(int); ok && v != 0 {
-				ebs.VolumesPerInstance = aws.Int64(int64(v))
-			}
-			ebs.VolumeSpecification = volumeSpec
-			ebsConfigs = append(ebsConfigs, ebs)
-		}
-	}
-	result.EbsBlockDeviceConfigs = ebsConfigs
-	return result
-}
-
 func resourceAwsEMRInstanceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).emrconn
 
@@ -124,12 +93,19 @@ func resourceAwsEMRInstanceGroupCreate(d *schema.ResourceData, meta interface{})
 	instanceCount := d.Get("instance_count").(int)
 	groupName := d.Get("name").(string)
 
-	ebsConfig := readEmrEBSConfig(d)
+	ebsConfig := &emr.EbsConfiguration{}
+	if v, ok := d.GetOk("ebs_config"); ok && v.(*schema.Set).Len() == 1 {
+		ebsConfig = expandEbsConfiguration(v.(*schema.Set).List())
+	}
+
+	if v, ok := d.GetOk("ebs_optimized"); ok {
+		ebsConfig.EbsOptimized = aws.Bool(v.(bool))
+	}
 
 	params := &emr.AddInstanceGroupsInput{
 		InstanceGroups: []*emr.InstanceGroupConfig{
 			{
-				InstanceRole:     aws.String("TASK"),
+				InstanceRole:     aws.String(emr.InstanceRoleTypeTask),
 				InstanceCount:    aws.Int64(int64(instanceCount)),
 				InstanceType:     aws.String(instanceType),
 				Name:             aws.String(groupName),
@@ -193,7 +169,7 @@ func fetchAllEMRInstanceGroups(conn *emr.EMR, clusterId string) ([]*emr.Instance
 	}
 
 	var groups []*emr.InstanceGroup
-	marker := aws.String("intitial")
+	marker := aws.String("initial")
 	for marker != nil {
 		log.Printf("[DEBUG] EMR Cluster Instance Marker: %s", *marker)
 		respGrps, errGrps := conn.ListInstanceGroups(req)
@@ -263,8 +239,8 @@ func resourceAwsEMRInstanceGroupUpdate(d *schema.ResourceData, meta interface{})
 	}
 
 	stateConf := &resource.StateChangeConf{
-		Pending:    []string{"PROVISIONING", "BOOTSTRAPPING", "RESIZING"},
-		Target:     []string{"RUNNING"},
+		Pending:    []string{emr.InstanceGroupStateProvisioning, emr.InstanceGroupStateBootstrapping, emr.InstanceGroupStateResizing},
+		Target:     []string{emr.InstanceGroupStateRunning},
 		Refresh:    instanceGroupStateRefresh(conn, d.Get("cluster_id").(string), d.Id()),
 		Timeout:    10 * time.Minute,
 		Delay:      10 * time.Second,
