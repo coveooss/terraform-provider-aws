@@ -103,6 +103,7 @@ This attribute is not compatible with KMS encryption, `kms_key_id` or `server_si
 This value is a fully qualified **ARN** of the KMS Key. If using `aws_kms_key`,
 use the exported `arn` attribute:
       `kms_key_id = "${aws_kms_key.foo.arn}"`
+* `remove_all_on_delete` - (Optional) Indicates that all previous version of the object must be deleted (applies only if versioning is enabled on the bucket).
 * `metadata` - (Optional) A mapping of keys/values to provision metadata (will be automatically prefixed by `x-amz-meta-, note that only lowercase label are currently supported by the AWS Go API).
 * `tags` - (Optional) A mapping of tags to assign to the object.
 
