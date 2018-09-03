@@ -128,7 +128,8 @@ func resourceAwsInstance() *schema.Resource {
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					// Sometimes the EC2 API responds with the equivalent, empty SHA1 sum
 					// echo -n "" | shasum
-					if old == "da39a3ee5e6b4b0d3255bfef95601890afd80709" && new == "" {
+					if (old == "da39a3ee5e6b4b0d3255bfef95601890afd80709" && new == "") ||
+						(old == "" && new == "da39a3ee5e6b4b0d3255bfef95601890afd80709") {
 						return true
 					}
 					return false
@@ -504,12 +505,12 @@ func resourceAwsInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 
 	// Build the creation struct
 	runOpts := &ec2.RunInstancesInput{
-		BlockDeviceMappings:   instanceOpts.BlockDeviceMappings,
-		DisableApiTermination: instanceOpts.DisableAPITermination,
-		EbsOptimized:          instanceOpts.EBSOptimized,
-		Monitoring:            instanceOpts.Monitoring,
-		IamInstanceProfile:    instanceOpts.IAMInstanceProfile,
-		ImageId:               instanceOpts.ImageID,
+		BlockDeviceMappings:               instanceOpts.BlockDeviceMappings,
+		DisableApiTermination:             instanceOpts.DisableAPITermination,
+		EbsOptimized:                      instanceOpts.EBSOptimized,
+		Monitoring:                        instanceOpts.Monitoring,
+		IamInstanceProfile:                instanceOpts.IAMInstanceProfile,
+		ImageId:                           instanceOpts.ImageID,
 		InstanceInitiatedShutdownBehavior: instanceOpts.InstanceInitiatedShutdownBehavior,
 		InstanceType:                      instanceOpts.InstanceType,
 		Ipv6AddressCount:                  instanceOpts.Ipv6AddressCount,

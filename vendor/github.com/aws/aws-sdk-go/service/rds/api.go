@@ -3781,6 +3781,12 @@ func (c *RDS) DescribeDBClustersRequest(input *DescribeDBClustersInput) (req *re
 		Name:       opDescribeDBClusters,
 		HTTPMethod: "POST",
 		HTTPPath:   "/",
+		Paginator: &request.Paginator{
+			InputTokens:     []string{"Marker"},
+			OutputTokens:    []string{"Marker"},
+			LimitToken:      "MaxRecords",
+			TruncationToken: "",
+		},
 	}
 
 	if input == nil {
@@ -3831,6 +3837,56 @@ func (c *RDS) DescribeDBClustersWithContext(ctx aws.Context, input *DescribeDBCl
 	req.SetContext(ctx)
 	req.ApplyOptions(opts...)
 	return out, req.Send()
+}
+
+// DescribeDBClustersPages iterates over the pages of a DescribeDBClusters operation,
+// calling the "fn" function with the response data for each page. To stop
+// iterating, return false from the fn function.
+//
+// See DescribeDBClusters method for more information on how to use this operation.
+//
+// Note: This operation can generate multiple requests to a service.
+//
+//    // Example iterating over at most 3 pages of a DescribeDBClusters operation.
+//    pageNum := 0
+//    err := client.DescribeDBClustersPages(params,
+//        func(page *DescribeDBClustersOutput, lastPage bool) bool {
+//            pageNum++
+//            fmt.Println(page)
+//            return pageNum <= 3
+//        })
+//
+func (c *RDS) DescribeDBClustersPages(input *DescribeDBClustersInput, fn func(*DescribeDBClustersOutput, bool) bool) error {
+	return c.DescribeDBClustersPagesWithContext(aws.BackgroundContext(), input, fn)
+}
+
+// DescribeDBClustersPagesWithContext same as DescribeDBClustersPages except
+// it takes a Context and allows setting request options on the pages.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *RDS) DescribeDBClustersPagesWithContext(ctx aws.Context, input *DescribeDBClustersInput, fn func(*DescribeDBClustersOutput, bool) bool, opts ...request.Option) error {
+	p := request.Pagination{
+		NewRequest: func() (*request.Request, error) {
+			var inCpy *DescribeDBClustersInput
+			if input != nil {
+				tmp := *input
+				inCpy = &tmp
+			}
+			req, _ := c.DescribeDBClustersRequest(inCpy)
+			req.SetContext(ctx)
+			req.ApplyOptions(opts...)
+			return req, nil
+		},
+	}
+
+	cont := true
+	for p.Next() && cont {
+		cont = fn(p.Page().(*DescribeDBClustersOutput), !p.HasNextPage())
+	}
+	return p.Err()
 }
 
 const opDescribeDBEngineVersions = "DescribeDBEngineVersions"
@@ -6854,7 +6910,10 @@ func (c *RDS) ModifyCurrentDBClusterCapacityRequest(input *ModifyCurrentDBCluste
 // in the Amazon RDS User Guide.
 //
 // If you call ModifyCurrentDBClusterCapacity with the default TimeoutAction,
-// connections to the DB cluster are dropped when the capacity is set.
+// connections that prevent Aurora Serverless from finding a scaling point might
+// be dropped. For more information about scaling points, see  Autoscaling for
+// Aurora Serverless (http://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/aurora-serverless.how-it-works.html#aurora-serverless.how-it-works.auto-scaling)
+// in the Amazon RDS User Guide.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -22369,8 +22428,8 @@ type ModifyCurrentDBClusterCapacityInput struct {
 	// The action to take when the timeout is reached, either ForceApplyCapacityChange
 	// or RollbackCapacityChange.
 	//
-	// ForceApplyCapacityChange, the default, drops connections to the DB cluster
-	// and sets the capacity to the specified value as soon as possible.
+	// ForceApplyCapacityChange, the default, sets the capacity to the specified
+	// value as soon as possible.
 	//
 	// RollbackCapacityChange ignores the capacity change if a scaling point is
 	// not found in the timeout period.
