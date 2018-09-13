@@ -235,7 +235,7 @@ func TestAWSFlowLogMigrateState(t *testing.T) {
 				"vpc_id": "test-vpc-id",
 			},
 			ExpectedID:   "test-vpc-id",
-			ExpectedType: "vpc",
+			ExpectedType: "VPC",
 		},
 		"subnet_id": {
 			StateVersion: 0,
@@ -244,7 +244,7 @@ func TestAWSFlowLogMigrateState(t *testing.T) {
 				"subnet_id": "test-subnet-id",
 			},
 			ExpectedID:   "test-subnet-id",
-			ExpectedType: "subnet",
+			ExpectedType: "Subnet",
 		},
 	}
 

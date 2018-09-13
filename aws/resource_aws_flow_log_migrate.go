@@ -33,9 +33,9 @@ func migrateAwsFlowLogStateV0toV1(is *terraform.InstanceState) (*terraform.Insta
 		ID    string
 		Type  string
 	}{
-		{ID: is.Attributes["vpc_id"], Type: ec2.ResourceTypeVpc, OldID: "vpc_id"},
-		{ID: is.Attributes["subnet_id"], Type: ec2.ResourceTypeSubnet, OldID: "subnet_id"},
-		{ID: is.Attributes["eni_id"], Type: ec2.ResourceTypeNetworkInterface, OldID: "eni_id"},
+		{ID: is.Attributes["vpc_id"], Type: ec2.FlowLogsResourceTypeVpc, OldID: "vpc_id"},
+		{ID: is.Attributes["subnet_id"], Type: ec2.FlowLogsResourceTypeSubnet, OldID: "subnet_id"},
+		{ID: is.Attributes["eni_id"], Type: ec2.FlowLogsResourceTypeNetworkInterface, OldID: "eni_id"},
 	}
 
 	for _, t := range types {
