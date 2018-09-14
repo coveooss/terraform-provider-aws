@@ -25,8 +25,7 @@ script:
 - if [ ${TRAVIS_TAG::1} = v ];
   then
     make test &&
-    make vendor-status &&
-    make vet;
+    make vendor-status;
   fi
 
 # branches:
