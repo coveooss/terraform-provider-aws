@@ -3,9 +3,10 @@ package aws
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/arn"
+	"github.com/aws/aws-sdk-go/service/directconnect"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
@@ -19,42 +20,28 @@ func resourceAwsFlowLog() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
+		CustomizeDiff: resourceAwsLogFlowCustomizeDiff,
+
 		MigrateState:  resourceAwsFlowLogMigrateState,
 		SchemaVersion: 1,
 
 		Schema: map[string]*schema.Schema{
-
-			"eni_id": {
-				Type:             schema.TypeString,
-				Optional:         true,
-				ForceNew:         true,
-				ConflictsWith:    []string{"subnet_id", "vpc_id", "resource_type", "resource_ids"},
-				Deprecated:       "Attribute eni_id is deprecated on aws_flow_log resources. Use resource_type in combination with resource_ids instead.",
-				DiffSuppressFunc: diffIsSameResourcesForType(ec2.FlowLogsResourceTypeNetworkInterface),
-			},
-
-			"subnet_id": {
-				Type:             schema.TypeString,
-				Optional:         true,
-				ForceNew:         true,
-				ConflictsWith:    []string{"eni_id", "vpc_id", "resource_type", "resource_ids"},
-				Deprecated:       "Attribute subnet_id is deprecated on aws_flow_log resources. Use resource_type in combination with resource_ids instead.",
-				DiffSuppressFunc: diffIsSameResourcesForType(ec2.FlowLogsResourceTypeSubnet),
-			},
-
-			"vpc_id": {
-				Type:             schema.TypeString,
-				Optional:         true,
-				ForceNew:         true,
-				ConflictsWith:    []string{"eni_id", "subnet_id", "resource_type", "resource_ids"},
-				Deprecated:       "Attribute vpc_id is deprecated on aws_flow_log resources. Use resource_type in combination with resource_ids instead.",
-				DiffSuppressFunc: diffIsSameResourcesForType(ec2.FlowLogsResourceTypeVpc),
-			},
-
 			"iam_role_arn": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
+			},
+
+			"log_group_name": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					// Suppress diff if newer log_destination argument is the same as this legacy value
+					logGroupName := d.Get("log_destination")
+					logDestType := d.Get("log_destination_type")
+					return logGroupName == d.Get("log_group_name") && logDestType == ec2.LogDestinationTypeCloudWatchLogs
+				},
 			},
 
 			"log_destination": {
@@ -75,24 +62,35 @@ func resourceAwsFlowLog() *schema.Resource {
 				}, false),
 			},
 
-			"log_group_name": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					// Suppress diff if newer log_destination argument is the same as this legacy value
-					logGroupName := d.Get("log_destination")
-					logDestType := d.Get("log_destination_type")
-					return logGroupName == d.Get("log_group_name") && logDestType == ec2.LogDestinationTypeCloudWatchLogs
-				},
+			"vpc_id": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				ForceNew:         true,
+				ConflictsWith:    []string{"eni_id", "subnet_id", "resource_type", "resource_id"},
+				Deprecated:       "Attribute vpc_id is deprecated on aws_flow_log resources. Use resource_type in combination with resource_id instead.",
+				DiffSuppressFunc: diffIsSameResourcesForType(ec2.FlowLogsResourceTypeVpc),
 			},
 
-			"resource_ids": {
-				Type:     schema.TypeSet,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Set:      schema.HashString,
-				MinItems: 1,
-				MaxItems: 1000,
+			"eni_id": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				ForceNew:         true,
+				ConflictsWith:    []string{"subnet_id", "vpc_id", "resource_type", "resource_id"},
+				Deprecated:       "Attribute eni_id is deprecated on aws_flow_log resources. Use resource_type in combination with resource_id instead.",
+				DiffSuppressFunc: diffIsSameResourcesForType(ec2.FlowLogsResourceTypeNetworkInterface),
+			},
+
+			"subnet_id": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				ForceNew:         true,
+				ConflictsWith:    []string{"eni_id", "vpc_id", "resource_type", "resource_id"},
+				Deprecated:       "Attribute subnet_id is deprecated on aws_flow_log resources. Use resource_type in combination with resource_id instead.",
+				DiffSuppressFunc: diffIsSameResourcesForType(ec2.FlowLogsResourceTypeSubnet),
+			},
+
+			"resource_id": {
+				Type:     schema.TypeString,
 				Optional: true, // should be switched to Required when old format is deprecated
 				ForceNew: true,
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
@@ -132,6 +130,16 @@ func resourceAwsFlowLog() *schema.Resource {
 					ec2.TrafficTypeAll,
 				}, false),
 			},
+
+			"flow_log_status": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
+			"deliver_logs_status": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -139,45 +147,50 @@ func resourceAwsFlowLog() *schema.Resource {
 func resourceAwsLogFlowCreate(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).ec2conn
 
-	var logDestType, logDest *string
-	resourceType, resourceIDs := readLegacyResourceTypeAndIDs(d)
-
-	if len(resourceIDs) == 0 || *resourceType == "" {
-		logDest = aws.String(d.Get("log_destination").(string))
-		logDestType = aws.String(d.Get("log_destination_type").(string))
-		resourceIDs = expandStringList(d.Get("resource_ids").(*schema.Set).List())
-		resourceType = aws.String(d.Get("resource_type").(string))
+	req := &ec2.CreateFlowLogsInput{
+		TrafficType: aws.String(d.Get("traffic_type").(string)),
 	}
 
-	if len(resourceIDs) == 0 || *resourceType == "" {
-		return fmt.Errorf("Error: Flow Logs require a VPC, Subnet, or ENI ID AND a list of one or more IDs")
+	if v, ok := d.GetOk("iam_role_arn"); ok && v.(string) != "" {
+		req.DeliverLogsPermissionArn = aws.String(v.(string))
 	}
 
-	opts := &ec2.CreateFlowLogsInput{
-		DeliverLogsPermissionArn: aws.String(d.Get("iam_role_arn").(string)),
-		LogGroupName:             aws.String(d.Get("log_group_name").(string)),
-		ResourceIds:              resourceIDs,
-		ResourceType:             resourceType,
-		TrafficType:              aws.String(d.Get("traffic_type").(string)),
+	if v, ok := d.GetOk("log_destination"); ok && v.(string) != "" {
+		req.LogDestination = aws.String(v.(string))
+		req.LogDestinationType = aws.String(d.Get("log_destination_type").(string))
+	} else {
+		arn := arn.ARN{
+			Partition: meta.(*AWSClient).partition,
+			Region:    meta.(*AWSClient).region,
+			Service:   "logs",
+			AccountID: meta.(*AWSClient).accountid,
+			Resource:  fmt.Sprintf("log-group:%s", d.Get("log_group_name")),
+		}.String()
+		req.LogDestination = aws.String(arn)
+		req.LogDestinationType = aws.String(ec2.LogDestinationTypeCloudWatchLogs)
 	}
 
-	if logDest != nil && *logDest != "" && logDestType != nil && *logDestType != "" {
-		opts.LogDestination = logDest
-		opts.LogDestinationType = logDestType
+	if v, ok := d.GetOk("resource_id"); ok && v.(string) != "" {
+		req.ResourceIds = aws.StringSlice([]string{v.(string)})
+		req.ResourceType = aws.String(d.Get("resource_type").(string))
+	} else if v, ok := d.GetOkExists("vpc_id"); ok && v.(string) != "" {
+		req.ResourceIds = aws.StringSlice([]string{v.(string)})
+		req.ResourceType = aws.String(ec2.FlowLogsResourceTypeVpc)
+	} else if v, ok := d.GetOkExists("subnet_id"); ok && v.(string) != "" {
+		req.ResourceIds = aws.StringSlice([]string{v.(string)})
+		req.ResourceType = aws.String(ec2.FlowLogsResourceTypeSubnet)
+	} else if v, ok := d.GetOkExists("eni_id"); ok && v.(string) != "" {
+		req.ResourceIds = aws.StringSlice([]string{v.(string)})
+		req.ResourceType = aws.String(ec2.FlowLogsResourceTypeNetworkInterface)
 	}
 
-	log.Printf("[DEBUG] Flow Log Create configuration: %s", opts)
-
-	resp, err := conn.CreateFlowLogs(opts)
+	log.Printf("[DEBUG] Creating Flow Log: %#v", req)
+	resp, err := conn.CreateFlowLogs(req)
 	if err != nil {
-		return fmt.Errorf("Error creating Flow Log for (%s), error: %s", resourceId, err)
+		return err
 	}
 
-	if len(resp.FlowLogIds) > 1 {
-		return fmt.Errorf("Error: multiple Flow Logs created for (%s)", resourceId)
-	}
-
-	d.SetId(*resp.FlowLogIds[0])
+	d.SetId(aws.StringValue(resp.FlowLogIds[0]))
 
 	return resourceAwsLogFlowRead(d, meta)
 }
@@ -185,36 +198,47 @@ func resourceAwsLogFlowCreate(d *schema.ResourceData, meta interface{}) error {
 func resourceAwsLogFlowRead(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).ec2conn
 
-	opts := &ec2.DescribeFlowLogsInput{
-		FlowLogIds: []*string{aws.String(d.Id())},
-	}
-
-	resp, err := conn.DescribeFlowLogs(opts)
+	resp, err := conn.DescribeFlowLogs(&ec2.DescribeFlowLogsInput{
+		FlowLogIds: aws.StringSlice([]string{d.Id()}),
+	})
 	if err != nil {
-		log.Printf("[WARN] Error describing Flow Logs for id (%s)", d.Id())
-		d.SetId("")
-		return nil
+		return err
 	}
-
 	if len(resp.FlowLogs) == 0 {
-		log.Printf("[WARN] No Flow Logs found for id (%s)", d.Id())
+		log.Printf("[WARN] Flow Log (%s) not found, removing from state", d.Id())
 		d.SetId("")
 		return nil
 	}
 
 	fl := resp.FlowLogs[0]
-	d.Set("traffic_type", fl.TrafficType)
-	d.Set("log_group_name", fl.LogGroupName)
 	d.Set("iam_role_arn", fl.DeliverLogsPermissionArn)
-	d.Set("log_destination", fl.LogDestination)
-	d.Set("log_destination_type", fl.LogDestinationType)
-	d.Set("resource_ids", schema.NewSet(schema.HashString, []interface{}{*fl.ResourceId}))
+	d.Set("traffic_type", fl.TrafficType)
+	d.Set("flow_log_status", fl.FlowLogStatus)
+	d.Set("deliver_logs_status", fl.DeliverLogsStatus)
 
-	if strings.HasPrefix(*fl.ResourceId, "vpc-") {
+	if logDestination := aws.StringValue(fl.LogDestination); logDestination != "" {
+		d.Set("log_destination", logDestination)
+		d.Set("log_destination_type", fl.LogDestinationType)
+	} else if logGroupName := aws.StringValue(fl.LogGroupName); logGroupName != "" {
+		arn := arn.ARN{
+			Partition: meta.(*AWSClient).partition,
+			Region:    meta.(*AWSClient).region,
+			Service:   "logs",
+			AccountID: meta.(*AWSClient).accountid,
+			Resource:  fmt.Sprintf("log-group:%s", logGroupName),
+		}.String()
+		d.Set("log_destination", arn)
+		d.Set("log_destination_type", ec2.LogDestinationTypeCloudWatchLogs)
+	}
+
+	d.Set("resource_id", fl.ResourceId)
+	prefix, _ := parseEc2ResourceId(aws.StringValue(fl.ResourceId))
+	switch prefix {
+	case "vpc":
 		d.Set("resource_type", ec2.FlowLogsResourceTypeVpc)
-	} else if strings.HasPrefix(*fl.ResourceId, "subnet-") {
+	case "subnet":
 		d.Set("resource_type", ec2.FlowLogsResourceTypeSubnet)
-	} else if strings.HasPrefix(*fl.ResourceId, "eni-") {
+	case "eni":
 		d.Set("resource_type", ec2.FlowLogsResourceTypeNetworkInterface)
 	}
 
@@ -224,14 +248,31 @@ func resourceAwsLogFlowRead(d *schema.ResourceData, meta interface{}) error {
 func resourceAwsLogFlowDelete(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).ec2conn
 
-	log.Printf(
-		"[DEBUG] Flow Log Destroy: %s", d.Id())
+	log.Printf("[DEBUG] Deleting Flow Log: %s", d.Id())
 	_, err := conn.DeleteFlowLogs(&ec2.DeleteFlowLogsInput{
-		FlowLogIds: []*string{aws.String(d.Id())},
+		FlowLogIds: aws.StringSlice([]string{d.Id()}),
 	})
-
 	if err != nil {
-		return fmt.Errorf("Error deleting Flow Log with ID (%s), error: %s", d.Id(), err)
+		if isAWSErr(err, "InvalidFlowLogId.NotFound", "") {
+			return nil
+		}
+		return err
+	}
+
+	return nil
+}
+
+func resourceAwsLogFlowCustomizeDiff(diff *schema.ResourceDiff, meta interface{}) error {
+	if diff.Id() == "" {
+		// New resource.
+		if addressFamily := diff.Get("address_family").(string); addressFamily == directconnect.AddressFamilyIpv4 {
+			if _, ok := diff.GetOk("customer_address"); !ok {
+				return fmt.Errorf("'customer_address' must be set when 'address_family' is '%s'", addressFamily)
+			}
+			if _, ok := diff.GetOk("amazon_address"); !ok {
+				return fmt.Errorf("'amazon_address' must be set when 'address_family' is '%s'", addressFamily)
+			}
+		}
 	}
 
 	return nil
