@@ -113,6 +113,32 @@ func expandEcsVolumes(configured []interface{}) ([]*ecs.Volume, error) {
 			}
 		}
 
+		configList, ok := data["docker_volume_configuration"].([]interface{})
+		if ok && len(configList) > 0 {
+			config := configList[0].(map[string]interface{})
+			l.DockerVolumeConfiguration = &ecs.DockerVolumeConfiguration{}
+
+			if v, ok := config["scope"].(string); ok && v != "" {
+				l.DockerVolumeConfiguration.Scope = aws.String(v)
+			}
+
+			if v, ok := config["autoprovision"]; ok {
+				l.DockerVolumeConfiguration.Autoprovision = aws.Bool(v.(bool))
+			}
+
+			if v, ok := config["driver"].(string); ok && v != "" {
+				l.DockerVolumeConfiguration.Driver = aws.String(v)
+			}
+
+			if v, ok := config["driver_opts"].(map[string]interface{}); ok && len(v) > 0 {
+				l.DockerVolumeConfiguration.DriverOpts = stringMapToPointers(v)
+			}
+
+			if v, ok := config["labels"].(map[string]interface{}); ok && len(v) > 0 {
+				l.DockerVolumeConfiguration.Labels = stringMapToPointers(v)
+			}
+		}
+
 		volumes = append(volumes, l)
 	}
 
@@ -621,13 +647,45 @@ func flattenEcsVolumes(list []*ecs.Volume) []map[string]interface{} {
 			"name": *volume.Name,
 		}
 
-		if volume.Host.SourcePath != nil {
+		if volume.Host != nil && volume.Host.SourcePath != nil {
 			l["host_path"] = *volume.Host.SourcePath
+		}
+
+		if volume.DockerVolumeConfiguration != nil {
+			l["docker_volume_configuration"] = flattenDockerVolumeConfiguration(volume.DockerVolumeConfiguration)
 		}
 
 		result = append(result, l)
 	}
 	return result
+}
+
+func flattenDockerVolumeConfiguration(config *ecs.DockerVolumeConfiguration) []interface{} {
+	var items []interface{}
+	m := make(map[string]interface{})
+
+	if config.Scope != nil {
+		m["scope"] = aws.StringValue(config.Scope)
+	}
+
+	if config.Autoprovision != nil {
+		m["autoprovision"] = aws.BoolValue(config.Autoprovision)
+	}
+
+	if config.Driver != nil {
+		m["driver"] = aws.StringValue(config.Driver)
+	}
+
+	if config.DriverOpts != nil {
+		m["driver_opts"] = pointersMapToStringList(config.DriverOpts)
+	}
+
+	if config.Labels != nil {
+		m["labels"] = pointersMapToStringList(config.Labels)
+	}
+
+	items = append(items, m)
+	return items
 }
 
 // Flattens an array of ECS LoadBalancers into a []map[string]interface{}
@@ -1811,7 +1869,7 @@ func flattenBeanstalkTrigger(list []*elasticbeanstalk.Trigger) []string {
 }
 
 // There are several parts of the AWS API that will sort lists of strings,
-// causing diffs inbetween resources that use lists. This avoids a bit of
+// causing diffs between resources that use lists. This avoids a bit of
 // code duplication for pre-sorts that can be used for things like hash
 // functions, etc.
 func sortInterfaceSlice(in []interface{}) []interface{} {
@@ -2752,8 +2810,9 @@ func flattenIoTRuleFirehoseActions(actions []*iot.Action) []map[string]interface
 		result := make(map[string]interface{})
 		v := a.Firehose
 		if v != nil {
-			result["role_arn"] = *v.RoleArn
-			result["delivery_stream_name"] = *v.DeliveryStreamName
+			result["role_arn"] = aws.StringValue(v.RoleArn)
+			result["delivery_stream_name"] = aws.StringValue(v.DeliveryStreamName)
+			result["separator"] = aws.StringValue(v.Separator)
 
 			results = append(results, result)
 		}
@@ -4205,7 +4264,7 @@ func expandDynamoDbAttributes(cfg []interface{}) []*dynamodb.AttributeDefinition
 	return attributes
 }
 
-// TODO: Get rid of keySchemaM - the user should just explicitely define
+// TODO: Get rid of keySchemaM - the user should just explicitly define
 // this in the config, we shouldn't magically be setting it like this.
 // Removal will however require config change, hence BC. :/
 func expandDynamoDbLocalSecondaryIndexes(cfg []interface{}, keySchemaM map[string]interface{}) []*dynamodb.LocalSecondaryIndex {

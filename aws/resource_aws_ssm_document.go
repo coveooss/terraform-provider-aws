@@ -58,6 +58,7 @@ func resourceAwsSsmDocument() *schema.Resource {
 					ssm.DocumentTypeCommand,
 					ssm.DocumentTypePolicy,
 					ssm.DocumentTypeAutomation,
+					ssm.DocumentTypeSession,
 				}, false),
 			},
 			"schema_version": {
@@ -454,13 +455,11 @@ func getDocumentPermissions(d *schema.ResourceData, meta interface{}) (map[strin
 		account_ids[i] = *resp.AccountIds[i]
 	}
 
-	var ids = ""
+	ids := ""
 	if len(account_ids) == 1 {
 		ids = account_ids[0]
 	} else if len(account_ids) > 1 {
 		ids = strings.Join(account_ids, ",")
-	} else {
-		ids = ""
 	}
 
 	if ids == "" {

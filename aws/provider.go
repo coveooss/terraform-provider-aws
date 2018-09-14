@@ -325,6 +325,7 @@ func Provider() terraform.ResourceProvider {
 			"aws_cloudformation_stack":                         resourceAwsCloudFormationStack(),
 			"aws_cloudfront_distribution":                      resourceAwsCloudFrontDistribution(),
 			"aws_cloudfront_origin_access_identity":            resourceAwsCloudFrontOriginAccessIdentity(),
+			"aws_cloudfront_public_key":                        resourceAwsCloudFrontPublicKey(),
 			"aws_cloudtrail":                                   resourceAwsCloudTrail(),
 			"aws_cloudwatch_event_permission":                  resourceAwsCloudWatchEventPermission(),
 			"aws_cloudwatch_event_rule":                        resourceAwsCloudWatchEventRule(),
@@ -672,7 +673,7 @@ func Provider() terraform.ResourceProvider {
 			// ALBs are actually LBs because they can be type `network` or `application`
 			// To avoid regressions, we will add a new resource for each and they both point
 			// back to the old ALB version. IF the Terraform supported aliases for resources
-			// this would be a whole lot simplier
+			// this would be a whole lot simpler
 			"aws_alb":                         resourceAwsLb(),
 			"aws_lb":                          resourceAwsLb(),
 			"aws_alb_listener":                resourceAwsLbListener(),
