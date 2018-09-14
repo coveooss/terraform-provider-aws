@@ -49,7 +49,7 @@ func TestAccDataSourceAWSS3BucketObject_basic(t *testing.T) {
 func TestAccDataSourceAWSS3BucketObject_readableBody(t *testing.T) {
 	rInt := acctest.RandInt()
 	resourceOnlyConf, conf := testAccAWSDataSourceS3ObjectConfig_readableBody(rInt)
-
+	
 	var rObj s3.GetObjectOutput
 	var dsObj s3.GetObjectOutput
 
