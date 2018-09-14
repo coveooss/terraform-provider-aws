@@ -75,7 +75,7 @@ func resourceAwsS3BucketObject() *schema.Resource {
 				Optional: true,
 			},
 
-			"metadata": &schema.Schema{
+			"metadata": {
 				Type:         schema.TypeMap,
 				ValidateFunc: validateMetadataIsLowerCase,
 				Optional:     true,

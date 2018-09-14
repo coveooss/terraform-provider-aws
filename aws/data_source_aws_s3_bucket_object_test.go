@@ -49,7 +49,7 @@ func TestAccDataSourceAWSS3BucketObject_basic(t *testing.T) {
 func TestAccDataSourceAWSS3BucketObject_readableBody(t *testing.T) {
 	rInt := acctest.RandInt()
 	resourceOnlyConf, conf := testAccAWSDataSourceS3ObjectConfig_readableBody(rInt)
-	
+
 	var rObj s3.GetObjectOutput
 	var dsObj s3.GetObjectOutput
 
@@ -92,13 +92,13 @@ func TestAccDataSourceAWSS3BucketObject_forcedContentType_readableBody(t *testin
 		Providers:                 testAccProviders,
 		PreventPostDestroyRefresh: true,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: resourceOnlyConf,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSS3BucketObjectExists("aws_s3_bucket_object.object", &rObj),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: conf,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAwsS3ObjectDataSourceExists("data.aws_s3_bucket_object.obj", &dsObj),
