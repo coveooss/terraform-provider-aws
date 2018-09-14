@@ -111,6 +111,8 @@ Note that:
 In addition to all arguments above, the following attributes are exported:
 
 * `id` - The Flow Log ID
+* `flow_log_status` - The status of the flow log
+* `deliver_logs_status` - The status of the logs delivery
 
 ## Import
 
