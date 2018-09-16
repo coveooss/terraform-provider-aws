@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
@@ -224,51 +225,70 @@ func TestAWSFlowLogMigrateState(t *testing.T) {
 		StateVersion int
 		ID           string
 		Attributes   map[string]string
-		ExpectedID   string
-		ExpectedType string
-		Meta         interface{}
+		Expected     map[string]string
 	}{
-		"vpc_id": {
+		"v0_1_vpc_id": {
 			StateVersion: 0,
-			ID:           "tf-testing-file",
+			ID:           "some_id",
 			Attributes: map[string]string{
-				"vpc_id": "test-vpc-id",
+				"vpc_id":         "vpc-12345678",
+				"log_group_name": "test",
 			},
-			ExpectedID:   "test-vpc-id",
-			ExpectedType: "VPC",
+			Expected: map[string]string{
+				"resource_id":          "vpc-12345678",
+				"resource_type":        "VPC",
+				"log_destination_type": "cloud-watch-logs",
+			},
 		},
-		"subnet_id": {
+		"v0_1_subnet_id": {
 			StateVersion: 0,
-			ID:           "tf-testing-file",
+			ID:           "some_id",
 			Attributes: map[string]string{
-				"subnet_id": "test-subnet-id",
+				"subnet_id":      "sn-12345678",
+				"log_group_name": "test",
 			},
-			ExpectedID:   "test-subnet-id",
-			ExpectedType: "Subnet",
+			Expected: map[string]string{
+				"resource_id":          "sn-12345678",
+				"resource_type":        "Subnet",
+				"log_destination_type": "cloud-watch-logs",
+			},
+		},
+		"v0_1_eni_id": {
+			StateVersion: 0,
+			ID:           "some_id",
+			Attributes: map[string]string{
+				"eni_id":         "eni-12345678",
+				"log_group_name": "test",
+			},
+			Expected: map[string]string{
+				"resource_id":          "eni-12345678",
+				"resource_type":        "NetworkInterface",
+				"log_destination_type": "cloud-watch-logs",
+			},
 		},
 	}
+
+	testAccPreCheck(t)
 
 	for tn, tc := range cases {
 		is := &terraform.InstanceState{
 			ID:         tc.ID,
 			Attributes: tc.Attributes,
 		}
-		is, err := resourceAwsFlowLogMigrateState(tc.StateVersion, is, tc.Meta)
-
+		is, err := resourceAwsFlowLogMigrateState(tc.StateVersion, is, testAccProvider.Meta())
 		if err != nil {
 			t.Fatalf("bad: %s, err: %#v", tn, err)
 		}
 
-		if is.Attributes["resource_type"] != tc.ExpectedType {
-			t.Fatalf("Bad resource_type migration: %s\n\n expected: %s", is.Attributes["resource_type"], tc.ExpectedType)
+		for k, v := range tc.Expected {
+			if is.Attributes[k] != v {
+				t.Fatalf("Bad migration (%s): %s\n\n expected: %s", k, is.Attributes[k], v)
+			}
 		}
 
-		if is.Attributes["resource_ids.#"] != "1" {
-			t.Fatalf("Bad resource_ids migration: %s\n\n expected: %s", is.Attributes["resource_ids.#"], "1")
-		}
-
-		if is.Attributes[tn] != "" {
-			t.Fatalf("Bad migration: %s\n\n expected value for %s to be removed", is.Attributes[tn], tn)
+		_, err = arn.Parse(is.Attributes["log_destination"])
+		if err != nil {
+			t.Fatalf("invalid ARN: %s, err: %#v", is.Attributes["log_destination"], err)
 		}
 	}
 }
