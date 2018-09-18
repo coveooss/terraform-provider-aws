@@ -53,7 +53,7 @@ func migrateAwsFlowLogStateV0toV1(is *terraform.InstanceState, meta interface{})
 		Region:    meta.(*AWSClient).region,
 		Service:   "logs",
 		AccountID: meta.(*AWSClient).accountid,
-		Resource:  fmt.Sprintf("log-group:%s", is.Attributes["log_group_name"]),
+		Resource:  fmt.Sprintf("log-group:%s:*", is.Attributes["log_group_name"]),
 	}.String()
 	is.Attributes["log_destination"] = arn
 	is.Attributes["log_destination_type"] = ec2.LogDestinationTypeCloudWatchLogs
