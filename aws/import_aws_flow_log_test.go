@@ -8,7 +8,7 @@ import (
 )
 
 func TestAccAWSFlowLog_importBasic(t *testing.T) {
-	resourceName := "aws_flow_log.test_flow_log"
+	resourceName := "aws_flow_log.test_flow_log_vpc"
 
 	rInt := acctest.RandInt()
 
@@ -18,7 +18,7 @@ func TestAccAWSFlowLog_importBasic(t *testing.T) {
 		CheckDestroy: testAccCheckFlowLogDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccFlowLogConfig_basic(rInt),
+				Config: testAccFlowLogConfig_vpcOldSyntaxCloudWatch(rInt),
 			},
 
 			{
