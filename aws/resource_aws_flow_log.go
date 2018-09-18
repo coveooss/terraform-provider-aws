@@ -37,7 +37,7 @@ func resourceAwsFlowLog() *schema.Resource {
 				Optional:      true,
 				ForceNew:      true,
 				Computed:      true,
-				ConflictsWith: []string{"log_destination", "log_destination_type"},
+				ConflictsWith: []string{"log_destination"},
 				Deprecated:    "Attribute log_group_name is deprecated on aws_flow_log resources. Use log_destination_type in combination with log_destination instead.",
 			},
 
@@ -51,11 +51,10 @@ func resourceAwsFlowLog() *schema.Resource {
 			},
 
 			"log_destination_type": {
-				Type:          schema.TypeString,
-				Default:       ec2.LogDestinationTypeCloudWatchLogs,
-				Optional:      true,
-				ForceNew:      true,
-				ConflictsWith: []string{"log_group_name"},
+				Type:     schema.TypeString,
+				Default:  ec2.LogDestinationTypeCloudWatchLogs,
+				Optional: true,
+				ForceNew: true,
 				ValidateFunc: validation.StringInSlice([]string{
 					ec2.LogDestinationTypeCloudWatchLogs,
 					ec2.LogDestinationTypeS3,

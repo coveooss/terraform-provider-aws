@@ -269,16 +269,17 @@ func testAccCheckFlowLogDestroy(s *terraform.State) error {
 func testAccFlowLogConfig_vpcOldSyntaxCloudWatch(rInt int) string {
 	return fmt.Sprintf(`
 resource "aws_vpc" "default" {
-	cidr_block = "10.0.0.0/16"
+  cidr_block = "10.0.0.0/16"
 
-    tags {
-        Name = "terraform-testacc-flow-log-vpc"
-    }
+  tags {
+    Name = "terraform-testacc-flow-log-vpc"
+  }
 }
 
 resource "aws_iam_role" "test_role" {
-    name = "tf_test_flow_log_vpc_%d"
-    assume_role_policy = <<EOF
+  name = "tf_test_flow_log_vpc_%d"
+
+  assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -299,14 +300,14 @@ EOF
 }
 
 resource "aws_cloudwatch_log_group" "foobar" {
-    name = "tf-test-fl-%d"
+  name = "tf-test-fl-%d"
 }
 
 resource "aws_flow_log" "test_flow_log_vpc" {
-    log_group_name = "${aws_cloudwatch_log_group.foobar.name}"
-    iam_role_arn = "${aws_iam_role.test_role.arn}"
-    vpc_id = "${aws_vpc.default.id}"
-    traffic_type = "ALL"
+  log_group_name = "${aws_cloudwatch_log_group.foobar.name}"
+  iam_role_arn   = "${aws_iam_role.test_role.arn}"
+  vpc_id         = "${aws_vpc.default.id}"
+  traffic_type   = "ALL"
 }
 `, rInt, rInt)
 }
@@ -314,16 +315,17 @@ resource "aws_flow_log" "test_flow_log_vpc" {
 func testAccFlowLogConfig_vpcNewSyntaxCloudWatch(rInt int) string {
 	return fmt.Sprintf(`
 resource "aws_vpc" "default" {
-	cidr_block = "10.0.0.0/16"
+  cidr_block = "10.0.0.0/16"
 
-    tags {
-        Name = "terraform-testacc-flow-log-vpc"
-    }
+  tags {
+    Name = "terraform-testacc-flow-log-vpc"
+  }
 }
 
 resource "aws_iam_role" "test_role" {
-    name = "tf_test_flow_log_vpc_%d"
-    assume_role_policy = <<EOF
+  name = "tf_test_flow_log_vpc_%d"
+
+  assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -344,16 +346,16 @@ EOF
 }
 
 resource "aws_cloudwatch_log_group" "foobar" {
-    name = "tf-test-fl-%d"
+  name = "tf-test-fl-%d"
 }
 
 resource "aws_flow_log" "test_flow_log_vpc" {
-	log_destination = "${aws_cloudwatch_log_group.foobar.arn}"
-	log_destination_type = "cloud-watch-logs"
-    iam_role_arn = "${aws_iam_role.test_role.arn}"
-	resource_id = "${aws_vpc.default.id}"
-	resource_type = "VPC"
-    traffic_type = "ALL"
+  log_destination      = "${aws_cloudwatch_log_group.foobar.arn}"
+  log_destination_type = "cloud-watch-logs"
+  iam_role_arn         = "${aws_iam_role.test_role.arn}"
+  resource_id          = "${aws_vpc.default.id}"
+  resource_type        = "VPC"
+  traffic_type         = "ALL"
 }
 `, rInt, rInt)
 }
@@ -361,72 +363,50 @@ resource "aws_flow_log" "test_flow_log_vpc" {
 func testAccFlowLogConfig_vpcS3(rInt int) string {
 	return fmt.Sprintf(`
 resource "aws_vpc" "default" {
-	cidr_block = "10.0.0.0/16"
+  cidr_block = "10.0.0.0/16"
 
-    tags {
-        Name = "terraform-testacc-flow-log-vpc"
-    }
-}
-
-resource "aws_iam_role" "test_role" {
-    name = "tf_test_flow_log_vpc_%d"
-    assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": [
-          "ec2.amazonaws.com"
-        ]
-      },
-      "Action": [
-        "sts:AssumeRole"
-      ]
-    }
-  ]
-}
-EOF
+  tags {
+    Name = "terraform-testacc-flow-log-vpc"
+  }
 }
 
 resource "aws_s3_bucket" "foobar" {
-    bucket = "tf-test-fl-%d"
+  bucket = "tf-test-fl-%d"
 }
 
 resource "aws_flow_log" "test_flow_log_vpc" {
-	log_destination = "${aws_s3_bucket.foobar.arn}"
-	log_destination_type = "s3"
-    iam_role_arn = "${aws_iam_role.test_role.arn}"
-	resource_id = "${aws_vpc.default.id}"
-	resource_type = "VPC"
-    traffic_type = "ALL"
+  log_destination      = "${aws_s3_bucket.foobar.arn}"
+  log_destination_type = "s3"
+  resource_id          = "${aws_vpc.default.id}"
+  resource_type        = "VPC"
+  traffic_type         = "ALL"
 }
-`, rInt, rInt)
+`, rInt)
 }
 
 func testAccFlowLogConfig_subnetOldSyntaxCloudWatch(rInt int) string {
 	return fmt.Sprintf(`
 resource "aws_vpc" "default" {
-	cidr_block = "10.0.0.0/16"
+  cidr_block = "10.0.0.0/16"
 
-    tags {
-        Name = "terraform-testacc-flow-log-subnet"
-    }
+  tags {
+    Name = "terraform-testacc-flow-log-subnet"
+  }
 }
 
 resource "aws_subnet" "test_subnet" {
-    vpc_id = "${aws_vpc.default.id}"
-    cidr_block = "10.0.1.0/24"
+  vpc_id     = "${aws_vpc.default.id}"
+  cidr_block = "10.0.1.0/24"
 
-    tags {
-        Name = "tf-acc-flow-log-subnet"
-    }
+  tags {
+    Name = "tf-acc-flow-log-subnet"
+  }
 }
 
 resource "aws_iam_role" "test_role" {
-    name = "tf_test_flow_log_subnet_%d"
-    assume_role_policy = <<EOF
+  name = "tf_test_flow_log_subnet_%d"
+
+  assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -447,14 +427,14 @@ EOF
 }
 
 resource "aws_cloudwatch_log_group" "foobar" {
-    name = "tf-test-fl-%d"
+  name = "tf-test-fl-%d"
 }
 
 resource "aws_flow_log" "test_flow_log_subnet" {
-    log_group_name = "${aws_cloudwatch_log_group.foobar.name}"
-    iam_role_arn = "${aws_iam_role.test_role.arn}"
-    subnet_id = "${aws_subnet.test_subnet.id}"
-    traffic_type = "ACCEPT"
+  log_group_name = "${aws_cloudwatch_log_group.foobar.name}"
+  iam_role_arn   = "${aws_iam_role.test_role.arn}"
+  subnet_id      = "${aws_subnet.test_subnet.id}"
+  traffic_type   = "ACCEPT"
 }
 `, rInt, rInt)
 }
@@ -462,25 +442,26 @@ resource "aws_flow_log" "test_flow_log_subnet" {
 func testAccFlowLogConfig_subnetNewSyntaxCloudWatch(rInt int) string {
 	return fmt.Sprintf(`
 resource "aws_vpc" "default" {
-	cidr_block = "10.0.0.0/16"
+  cidr_block = "10.0.0.0/16"
 
-    tags {
-        Name = "terraform-testacc-flow-log-subnet"
-    }
+  tags {
+    Name = "terraform-testacc-flow-log-subnet"
+  }
 }
 
 resource "aws_subnet" "test_subnet" {
-    vpc_id = "${aws_vpc.default.id}"
-    cidr_block = "10.0.1.0/24"
+  vpc_id     = "${aws_vpc.default.id}"
+  cidr_block = "10.0.1.0/24"
 
-    tags {
-        Name = "tf-acc-flow-log-subnet"
-    }
+  tags {
+    Name = "tf-acc-flow-log-subnet"
+  }
 }
 
 resource "aws_iam_role" "test_role" {
-    name = "tf_test_flow_log_subnet_%d"
-    assume_role_policy = <<EOF
+  name = "tf_test_flow_log_subnet_%d"
+
+  assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -501,17 +482,15 @@ EOF
 }
 
 resource "aws_cloudwatch_log_group" "foobar" {
-    name = "tf-test-fl-%d"
+  name = "tf-test-fl-%d"
 }
 
 resource "aws_flow_log" "test_flow_log_subnet" {
-	log_destination = "${aws_cloudwatch_log_group.foobar.arn}"
-	# Test default value:
-	#log_destination_type = "cloud-watch-logs"
-    iam_role_arn = "${aws_iam_role.test_role.arn}"
-	resource_id = "${aws_subnet.test_subnet.id}"
-	resource_type = "Subnet"
-    traffic_type = "ACCEPT"
+  log_destination = "${aws_cloudwatch_log_group.foobar.arn}"
+  iam_role_arn    = "${aws_iam_role.test_role.arn}"
+  resource_id     = "${aws_subnet.test_subnet.id}"
+  resource_type   = "Subnet"
+  traffic_type    = "ACCEPT"
 }
 `, rInt, rInt)
 }
@@ -519,33 +498,34 @@ resource "aws_flow_log" "test_flow_log_subnet" {
 func testAccFlowLogConfig_eniOldSyntaxCloudWatch(rInt int) string {
 	return fmt.Sprintf(`
 resource "aws_vpc" "default" {
-	cidr_block = "10.0.0.0/16"
+  cidr_block = "10.0.0.0/16"
 
-    tags {
-        Name = "terraform-testacc-flow-log-eni"
-    }
+  tags {
+    Name = "terraform-testacc-flow-log-eni"
+  }
 }
 
 resource "aws_subnet" "test_subnet" {
-    vpc_id = "${aws_vpc.default.id}"
-    cidr_block = "10.0.1.0/24"
+  vpc_id     = "${aws_vpc.default.id}"
+  cidr_block = "10.0.1.0/24"
 
-    tags {
-        Name = "tf-acc-flow-log-eni"
-    }
+  tags {
+    Name = "tf-acc-flow-log-eni"
+  }
 }
 
 resource "aws_network_interface" "test_eni" {
-    subnet_id = "${aws_subnet.test_subnet.id}"
+  subnet_id = "${aws_subnet.test_subnet.id}"
 
-    tags {
-        Name = "tf-acc-flow-log-eni"
-    }
+  tags {
+    Name = "tf-acc-flow-log-eni"
+  }
 }
 
 resource "aws_iam_role" "test_role" {
-    name = "tf_test_flow_log_eni_%d"
-    assume_role_policy = <<EOF
+  name = "tf_test_flow_log_eni_%d"
+
+  assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -566,14 +546,14 @@ EOF
 }
 
 resource "aws_cloudwatch_log_group" "foobar" {
-    name = "tf-test-fl-%d"
+  name = "tf-test-fl-%d"
 }
 
 resource "aws_flow_log" "test_flow_log_eni" {
-    log_group_name = "${aws_cloudwatch_log_group.foobar.name}"
-    iam_role_arn = "${aws_iam_role.test_role.arn}"
-    eni_id = "${aws_network_interface.test_eni.id}"
-    traffic_type = "REJECT"
+  log_group_name = "${aws_cloudwatch_log_group.foobar.name}"
+  iam_role_arn   = "${aws_iam_role.test_role.arn}"
+  eni_id         = "${aws_network_interface.test_eni.id}"
+  traffic_type   = "REJECT"
 }
 `, rInt, rInt)
 }
@@ -581,33 +561,34 @@ resource "aws_flow_log" "test_flow_log_eni" {
 func testAccFlowLogConfig_eniNewSyntaxCloudWatch(rInt int) string {
 	return fmt.Sprintf(`
 resource "aws_vpc" "default" {
-	cidr_block = "10.0.0.0/16"
+  cidr_block = "10.0.0.0/16"
 
-    tags {
-        Name = "terraform-testacc-flow-log-eni"
-    }
+  tags {
+    Name = "terraform-testacc-flow-log-eni"
+  }
 }
 
 resource "aws_subnet" "test_subnet" {
-    vpc_id = "${aws_vpc.default.id}"
-    cidr_block = "10.0.1.0/24"
+  vpc_id     = "${aws_vpc.default.id}"
+  cidr_block = "10.0.1.0/24"
 
-    tags {
-        Name = "tf-acc-flow-log-eni"
-    }
+  tags {
+    Name = "tf-acc-flow-log-eni"
+  }
 }
 
 resource "aws_network_interface" "test_eni" {
-    subnet_id = "${aws_subnet.test_subnet.id}"
+  subnet_id = "${aws_subnet.test_subnet.id}"
 
-    tags {
-        Name = "tf-acc-flow-log-eni"
-    }
+  tags {
+    Name = "tf-acc-flow-log-eni"
+  }
 }
 
 resource "aws_iam_role" "test_role" {
-    name = "tf_test_flow_log_eni_%d"
-    assume_role_policy = <<EOF
+  name = "tf_test_flow_log_eni_%d"
+
+  assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -628,17 +609,16 @@ EOF
 }
 
 resource "aws_cloudwatch_log_group" "foobar" {
-    name = "tf-test-fl-%d"
+  name = "tf-test-fl-%d"
 }
 
 resource "aws_flow_log" "test_flow_log_eni" {
-	log_destination = "${aws_cloudwatch_log_group.foobar.arn}"
-	# Test default value:
-	log_destination_type = "cloud-watch-logs"
-    iam_role_arn = "${aws_iam_role.test_role.arn}"
-	resource_id = "${aws_network_interface.test_eni.id}"
-	resource_type = "NetworkInterface"
-    traffic_type = "REJECT"
+  log_destination      = "${aws_cloudwatch_log_group.foobar.arn}"
+  log_destination_type = "cloud-watch-logs"
+  iam_role_arn         = "${aws_iam_role.test_role.arn}"
+  resource_id          = "${aws_network_interface.test_eni.id}"
+  resource_type        = "NetworkInterface"
+  traffic_type         = "REJECT"
 }
 `, rInt, rInt)
 }
