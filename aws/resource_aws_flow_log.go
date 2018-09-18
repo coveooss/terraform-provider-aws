@@ -51,12 +51,10 @@ func resourceAwsFlowLog() *schema.Resource {
 			},
 
 			"log_destination_type": {
-				Type: schema.TypeString,
-				// Default must be nil if computed.
-				//Default:       ec2.LogDestinationTypeCloudWatchLogs,
+				Type:          schema.TypeString,
+				Default:       ec2.LogDestinationTypeCloudWatchLogs,
 				Optional:      true,
 				ForceNew:      true,
-				Computed:      true,
 				ConflictsWith: []string{"log_group_name"},
 				ValidateFunc: validation.StringInSlice([]string{
 					ec2.LogDestinationTypeCloudWatchLogs,
@@ -145,18 +143,14 @@ func resourceAwsLogFlowCreate(d *schema.ResourceData, meta interface{}) error {
 
 	if v := d.Get("log_destination").(string); v != "" {
 		req.LogDestination = aws.String(v)
-		logDestinationType := d.Get("log_destination_type").(string)
-		if logDestinationType == "" {
-			logDestinationType = ec2.LogDestinationTypeCloudWatchLogs
-		}
-		req.LogDestinationType = aws.String(logDestinationType)
+		req.LogDestinationType = aws.String(d.Get("log_destination_type").(string))
 	} else if v = d.Get("log_group_name").(string); v != "" {
 		arn := arn.ARN{
 			Partition: meta.(*AWSClient).partition,
 			Region:    meta.(*AWSClient).region,
 			Service:   "logs",
 			AccountID: meta.(*AWSClient).accountid,
-			Resource:  fmt.Sprintf("log-group:%s", v),
+			Resource:  fmt.Sprintf("log-group:%s:*", v),
 		}.String()
 		req.LogDestination = aws.String(arn)
 		req.LogDestinationType = aws.String(ec2.LogDestinationTypeCloudWatchLogs)
@@ -222,16 +216,16 @@ func resourceAwsLogFlowRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("flow_log_status", fl.FlowLogStatus)
 	d.Set("deliver_logs_status", fl.DeliverLogsStatus)
 
-	if logDestination := aws.StringValue(fl.LogDestination); logDestination != "" {
-		d.Set("log_destination", logDestination)
+	if v := aws.StringValue(fl.LogDestination); v != "" {
+		d.Set("log_destination", v)
 		d.Set("log_destination_type", fl.LogDestinationType)
-	} else if logGroupName := aws.StringValue(fl.LogGroupName); logGroupName != "" {
+	} else if v := aws.StringValue(fl.LogGroupName); v != "" {
 		arn := arn.ARN{
 			Partition: meta.(*AWSClient).partition,
 			Region:    meta.(*AWSClient).region,
 			Service:   "logs",
 			AccountID: meta.(*AWSClient).accountid,
-			Resource:  fmt.Sprintf("log-group:%s", logGroupName),
+			Resource:  fmt.Sprintf("log-group:%s:*", v),
 		}.String()
 		d.Set("log_destination", arn)
 		d.Set("log_destination_type", ec2.LogDestinationTypeCloudWatchLogs)
@@ -275,8 +269,36 @@ func resourceAwsLogFlowDelete(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceAwsLogFlowCustomizeDiff(diff *schema.ResourceDiff, meta interface{}) error {
-	if diff.Id() != "" {
-		// Existing resource.
+	if diff.Id() == "" {
+		// New resource.
+		return nil
+	}
+
+	if v := diff.Get("log_group_name").(string); v != "" {
+		arn := arn.ARN{
+			Partition: meta.(*AWSClient).partition,
+			Region:    meta.(*AWSClient).region,
+			Service:   "logs",
+			AccountID: meta.(*AWSClient).accountid,
+			Resource:  fmt.Sprintf("log-group:%s:*", v),
+		}.String()
+		diff.SetNew("log_destination", arn)
+		diff.SetNew("log_destination_type", ec2.LogDestinationTypeCloudWatchLogs)
+		diff.Clear("log_group_name")
+	}
+
+	if v := diff.Get("vpc_id").(string); v != "" {
+		diff.SetNew("resource_id", v)
+		diff.SetNew("resource_type", ec2.FlowLogsResourceTypeVpc)
+		diff.Clear("vpc_id")
+	} else if v := diff.Get("subnet_id").(string); v != "" {
+		diff.SetNew("resource_id", v)
+		diff.SetNew("resource_type", ec2.FlowLogsResourceTypeSubnet)
+		diff.Clear("subnet_id")
+	} else if v := diff.Get("eni_id").(string); v != "" {
+		diff.SetNew("resource_id", v)
+		diff.SetNew("resource_type", ec2.FlowLogsResourceTypeNetworkInterface)
+		diff.Clear("eni_id")
 	}
 
 	return nil
