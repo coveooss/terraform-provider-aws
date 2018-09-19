@@ -283,21 +283,21 @@ func resourceAwsLogFlowCustomizeDiff(diff *schema.ResourceDiff, meta interface{}
 		}.String()
 		diff.SetNew("log_destination", arn)
 		diff.SetNew("log_destination_type", ec2.LogDestinationTypeCloudWatchLogs)
-		diff.Clear("log_group_name")
+		_ = diff.Clear("log_group_name")
 	}
 
 	if v := diff.Get("vpc_id").(string); v != "" {
 		diff.SetNew("resource_id", v)
 		diff.SetNew("resource_type", ec2.FlowLogsResourceTypeVpc)
-		diff.Clear("vpc_id")
+		_ = diff.Clear("vpc_id")
 	} else if v := diff.Get("subnet_id").(string); v != "" {
 		diff.SetNew("resource_id", v)
 		diff.SetNew("resource_type", ec2.FlowLogsResourceTypeSubnet)
-		diff.Clear("subnet_id")
+		_ = diff.Clear("subnet_id")
 	} else if v := diff.Get("eni_id").(string); v != "" {
 		diff.SetNew("resource_id", v)
 		diff.SetNew("resource_type", ec2.FlowLogsResourceTypeNetworkInterface)
-		diff.Clear("eni_id")
+		_ = diff.Clear("eni_id")
 	}
 
 	return nil
