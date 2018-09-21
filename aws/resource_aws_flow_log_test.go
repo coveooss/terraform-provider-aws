@@ -2,6 +2,7 @@ package aws
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -172,6 +173,11 @@ func TestAccAWSFlowLog_vpcToS3(t *testing.T) {
 }
 
 func TestAccAWSFlowLog_migrateState(t *testing.T) {
+	if os.Getenv(resource.TestEnvVar) == "" {
+		t.Skip()
+		return
+	}
+
 	cases := map[string]struct {
 		StateVersion int
 		ID           string
