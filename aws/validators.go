@@ -45,7 +45,7 @@ func validateTypeStringNullableBoolean(v interface{}, k string) (ws []string, es
 		return
 	}
 
-	for _, str := range []string{"", "0", "1"} {
+	for _, str := range []string{"", "0", "1", "false", "true"} {
 		if value == str {
 			return
 		}
@@ -349,10 +349,6 @@ func validateCloudWatchLogResourcePolicyDocument(v interface{}, k string) (ws []
 		errors = append(errors, fmt.Errorf("%q contains an invalid JSON: %s", k, err))
 	}
 	return
-}
-
-func validateMaxLength(length int) schema.SchemaValidateFunc {
-	return validation.StringLenBetween(0, length)
 }
 
 func validateIntegerInRange(min, max int) schema.SchemaValidateFunc {

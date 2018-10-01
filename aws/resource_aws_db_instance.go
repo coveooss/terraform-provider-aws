@@ -773,7 +773,7 @@ func resourceAwsDbInstanceCreate(d *schema.ResourceData, meta interface{}) error
 			opts.AvailabilityZone = aws.String(attr.(string))
 		}
 
-		if attr, ok := d.GetOk("backup_retention_period"); ok {
+		if attr, ok := d.GetOkExists("backup_retention_period"); ok {
 			modifyDbInstanceInput.BackupRetentionPeriod = aws.Int64(int64(attr.(int)))
 			requiresModifyDbInstance = true
 		}
@@ -1230,7 +1230,7 @@ func resourceAwsDbInstanceRead(d *schema.ResourceData, meta interface{}) error {
 		replicas = append(replicas, *v)
 	}
 	if err := d.Set("replicas", replicas); err != nil {
-		return fmt.Errorf("[DEBUG] Error setting replicas attribute: %#v, error: %#v", replicas, err)
+		return fmt.Errorf("Error setting replicas attribute: %#v, error: %#v", replicas, err)
 	}
 
 	d.Set("replicate_source_db", v.ReadReplicaSourceDBInstanceIdentifier)
