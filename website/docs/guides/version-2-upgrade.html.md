@@ -38,6 +38,7 @@ Upgrade topics:
 - [Resource: aws_ecs_service](#resource-aws_ecs_service)
 - [Resource: aws_efs_file_system](#resource-aws_efs_file_system)
 - [Resource: aws_elasticache_cluster](#resource-aws_elasticache_cluster)
+- [Resource: aws_flow_log](#resource-aws_flow_log)
 - [Resource: aws_instance](#resource-aws_instance)
 - [Resource: aws_network_acl](#resource-aws_network_acl)
 - [Resource: aws_redshift_cluster](#resource-aws_redshift_cluster)
@@ -453,6 +454,108 @@ Default connections have been removed as part of LAG creation. To migrate your T
 * [`aws_dx_connection`](/docs/providers/aws/r/dx_connection.html)
 * [`aws_dx_connection_association`](/docs/providers/aws/r/dx_connection_association.html)
 
+## Resource: aws_flow_log
+
+### log_group_name Argument Removal
+
+Switch your Terraform configuration to the `log_destination` argument instead with `log_destination_type` set to `cloud-watch-logs`.
+
+For example, given this previous configuration:
+
+```hcl
+resource "aws_flow_log" "test_flow_log" {
+  # ... other configuration ...
+
+  log_group_name = "test_log_group"
+}
+```
+
+An updated configuration:
+
+```hcl
+resource "aws_flow_log" "test_flow_log" {
+  # ... other configuration ...
+
+  log_destination      = "arn:aws:logs:us-east-1:123456789012:log-group:test_log_group"
+  log_destination_type = "cloud-watch-logs"
+}
+```
+
+### vpc_id Argument Removal
+
+Switch your Terraform configuration to the `resource_id` argument instead with `resource_type` set to `VPC`.
+
+For example, given this previous configuration:
+
+```hcl
+resource "aws_flow_log" "test_flow_log" {
+  # ... other configuration ...
+
+  vpc_id = "vpc-12345678"
+}
+```
+
+An updated configuration:
+
+```hcl
+resource "aws_flow_log" "test_flow_log" {
+  # ... other configuration ...
+
+  resource_id   = "vpc-12345678"
+  resource_type = "VPC"
+}
+```
+
+### subnet_id Argument Removal
+
+Switch your Terraform configuration to the `resource_id` argument instead with `resource_type` set to `Subnet`.
+
+For example, given this previous configuration:
+
+```hcl
+resource "aws_flow_log" "test_flow_log" {
+  # ... other configuration ...
+
+  subnet_id = "subnet-12345678"
+}
+```
+
+An updated configuration:
+
+```hcl
+resource "aws_flow_log" "test_flow_log" {
+  # ... other configuration ...
+
+  resource_id   = "subnet-12345678"
+  resource_type = "Subnet"
+}
+```
+
+### eni_id Argument Removal
+
+Switch your Terraform configuration to the `resource_id` argument instead with `resource_type` set to `NetworkInterface`.
+
+For example, given this previous configuration:
+
+```hcl
+resource "aws_flow_log" "test_flow_log" {
+  # ... other configuration ...
+
+  eni_id = "eni-12345678"
+}
+```
+
+An updated configuration:
+
+```hcl
+resource "aws_flow_log" "test_flow_log" {
+  # ... other configuration ...
+
+  resource_id   = "eni-12345678"
+  resource_type = "NetworkInterface"
+}
+```
+
 ## Resource: aws_ecs_service
 
 ### placement_strategy Argument Removal
@@ -616,7 +719,7 @@ resource "aws_redshift_cluster" "example" {
 ### Import Change
 
 Previously, importing this resource resulted in an `aws_route` resource for each route, in
-addition to the `aws_route_table`, in the Terraform state. Support for importing `aws_route` resources has been added and importing this resource only adds the `aws_route_table` 
+addition to the `aws_route_table`, in the Terraform state. Support for importing `aws_route` resources has been added and importing this resource only adds the `aws_route_table`
 resource, with in-line routes, to the state.
 
 ## Resource: aws_wafregional_byte_match_set
