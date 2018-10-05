@@ -33,6 +33,8 @@ func resourceAwsS3BucketObject() *schema.Resource {
 			return nil
 		},
 
+		CustomizeDiff: updateComputedAttributes,
+
 		Schema: map[string]*schema.Schema{
 			"bucket": {
 				Type:     schema.TypeString,
@@ -172,6 +174,13 @@ func resourceAwsS3BucketObject() *schema.Resource {
 			},
 		},
 	}
+}
+
+func updateComputedAttributes(d *schema.ResourceDiff, meta interface{}) error {
+	if d.HasChange("etag") {
+		d.SetNewComputed("version_id")
+	}
+	return nil
 }
 
 func resourceAwsS3BucketObjectPut(d *schema.ResourceData, meta interface{}) error {

@@ -398,6 +398,7 @@ func Provider() terraform.ResourceProvider {
 			"aws_dynamodb_table_item":                          resourceAwsDynamoDbTableItem(),
 			"aws_dynamodb_table_item_attribute":                resourceAwsDynamoDbTableItemAttribute(),
 			"aws_dynamodb_global_table":                        resourceAwsDynamoDbGlobalTable(),
+			"aws_ec2_fleet":                                    resourceAwsEc2Fleet(),
 			"aws_ebs_snapshot":                                 resourceAwsEbsSnapshot(),
 			"aws_ebs_volume":                                   resourceAwsEbsVolume(),
 			"aws_ecr_lifecycle_policy":                         resourceAwsEcrLifecyclePolicy(),
@@ -672,6 +673,7 @@ func Provider() terraform.ResourceProvider {
 			"aws_batch_compute_environment":                    resourceAwsBatchComputeEnvironment(),
 			"aws_batch_job_definition":                         resourceAwsBatchJobDefinition(),
 			"aws_batch_job_queue":                              resourceAwsBatchJobQueue(),
+			"aws_pinpoint_app":                                 resourceAwsPinpointApp(),
 
 			// ALBs are actually LBs because they can be type `network` or `application`
 			// To avoid regressions, we will add a new resource for each and they both point
