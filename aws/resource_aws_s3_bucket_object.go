@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/hashicorp/terraform/helper/customdiff"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/mitchellh/go-homedir"
@@ -26,14 +27,15 @@ func resourceAwsS3BucketObject() *schema.Resource {
 		Read:   resourceAwsS3BucketObjectRead,
 		Update: resourceAwsS3BucketObjectPut,
 		Delete: resourceAwsS3BucketObjectDelete,
-		CustomizeDiff: func(diff *schema.ResourceDiff, v interface{}) error {
-			if diff.Get("etag_changed").(bool) {
-				diff.SetNewComputed("etag")
-			}
-			return nil
-		},
-
-		CustomizeDiff: updateComputedAttributes,
+		CustomizeDiff: customdiff.Sequence(
+			func(diff *schema.ResourceDiff, v interface{}) error {
+				if diff.Get("etag_changed").(bool) {
+					diff.SetNewComputed("etag")
+				}
+				return nil
+			},
+			updateComputedAttributes,
+		),
 
 		Schema: map[string]*schema.Schema{
 			"bucket": {
