@@ -177,6 +177,11 @@ func resourceAwsCodeBuildProject() *schema.Resource {
 							Optional: true,
 							Default:  false,
 						},
+						"certificate": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							ValidateFunc: validation.StringMatch(regexp.MustCompile(`\.(pem|zip)$`), "must end in .pem or .zip"),
+						},
 					},
 				},
 				Set: resourceAwsCodeBuildProjectEnvironmentHash,
@@ -619,6 +624,10 @@ func expandProjectEnvironment(d *schema.ResourceData) *codebuild.ProjectEnvironm
 		projectEnv.Type = aws.String(v.(string))
 	}
 
+	if v, ok := envConfig["certificate"]; ok && v.(string) != "" {
+		projectEnv.Certificate = aws.String(v.(string))
+	}
+
 	if v := envConfig["environment_variable"]; v != nil {
 		envVariables := v.([]interface{})
 		if len(envVariables) > 0 {
@@ -984,6 +993,7 @@ func flattenAwsCodeBuildProjectEnvironment(environment *codebuild.ProjectEnviron
 	envConfig["type"] = *environment.Type
 	envConfig["compute_type"] = *environment.ComputeType
 	envConfig["image"] = *environment.Image
+	envConfig["certificate"] = aws.StringValue(environment.Certificate)
 	envConfig["privileged_mode"] = *environment.PrivilegedMode
 
 	if environment.EnvironmentVariables != nil {
@@ -1071,6 +1081,9 @@ func resourceAwsCodeBuildProjectEnvironmentHash(v interface{}) int {
 	buf.WriteString(fmt.Sprintf("%s-", computeType))
 	buf.WriteString(fmt.Sprintf("%s-", image))
 	buf.WriteString(fmt.Sprintf("%t-", privilegedMode))
+	if v, ok := m["certificate"]; ok && v.(string) != "" {
+		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
+	}
 	for _, e := range environmentVariables {
 		if e != nil { // Old statefiles might have nil values in them
 			ev := e.(map[string]interface{})

@@ -230,6 +230,7 @@ func Provider() terraform.ResourceProvider {
 			"aws_lambda_function":                  dataSourceAwsLambdaFunction(),
 			"aws_lambda_invocation":                dataSourceAwsLambdaInvocation(),
 			"aws_launch_configuration":             dataSourceAwsLaunchConfiguration(),
+			"aws_launch_template":                  dataSourceAwsLaunchTemplate(),
 			"aws_mq_broker":                        dataSourceAwsMqBroker(),
 			"aws_nat_gateway":                      dataSourceAwsNatGateway(),
 			"aws_network_acls":                     dataSourceAwsNetworkAcls(),
@@ -265,6 +266,7 @@ func Provider() terraform.ResourceProvider {
 			"aws_vpc_endpoint_service":             dataSourceAwsVpcEndpointService(),
 			"aws_vpc_peering_connection":           dataSourceAwsVpcPeeringConnection(),
 			"aws_vpn_gateway":                      dataSourceAwsVpnGateway(),
+			"aws_workspaces_bundle":                dataSourceAwsWorkspaceBundle(),
 
 			// Adding the Aliases for the ALB -> LB Rename
 			"aws_lb":               dataSourceAwsLb(),
@@ -400,6 +402,7 @@ func Provider() terraform.ResourceProvider {
 			"aws_dynamodb_global_table":                        resourceAwsDynamoDbGlobalTable(),
 			"aws_ec2_fleet":                                    resourceAwsEc2Fleet(),
 			"aws_ebs_snapshot":                                 resourceAwsEbsSnapshot(),
+			"aws_ebs_snapshot_copy":                            resourceAwsEbsSnapshotCopy(),
 			"aws_ebs_volume":                                   resourceAwsEbsVolume(),
 			"aws_ecr_lifecycle_policy":                         resourceAwsEcrLifecyclePolicy(),
 			"aws_ecr_repository":                               resourceAwsEcrRepository(),
@@ -552,6 +555,7 @@ func Provider() terraform.ResourceProvider {
 			"aws_redshift_security_group":                      resourceAwsRedshiftSecurityGroup(),
 			"aws_redshift_parameter_group":                     resourceAwsRedshiftParameterGroup(),
 			"aws_redshift_subnet_group":                        resourceAwsRedshiftSubnetGroup(),
+			"aws_redshift_snapshot_copy_grant":                 resourceAwsRedshiftSnapshotCopyGrant(),
 			"aws_route53_delegation_set":                       resourceAwsRoute53DelegationSet(),
 			"aws_route53_query_log":                            resourceAwsRoute53QueryLog(),
 			"aws_route53_record":                               resourceAwsRoute53Record(),
@@ -674,6 +678,12 @@ func Provider() terraform.ResourceProvider {
 			"aws_batch_job_definition":                         resourceAwsBatchJobDefinition(),
 			"aws_batch_job_queue":                              resourceAwsBatchJobQueue(),
 			"aws_pinpoint_app":                                 resourceAwsPinpointApp(),
+			"aws_pinpoint_adm_channel":                         resourceAwsPinpointADMChannel(),
+			"aws_pinpoint_baidu_channel":                       resourceAwsPinpointBaiduChannel(),
+			"aws_pinpoint_email_channel":                       resourceAwsPinpointEmailChannel(),
+			"aws_pinpoint_event_stream":                        resourceAwsPinpointEventStream(),
+			"aws_pinpoint_gcm_channel":                         resourceAwsPinpointGCMChannel(),
+			"aws_pinpoint_sms_channel":                         resourceAwsPinpointSMSChannel(),
 
 			// ALBs are actually LBs because they can be type `network` or `application`
 			// To avoid regressions, we will add a new resource for each and they both point
