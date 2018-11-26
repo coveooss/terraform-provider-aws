@@ -9,27 +9,26 @@ description: |-
 # aws_flow_log
 
 Provides a VPC/Subnet/ENI Flow Log to capture IP traffic for a specific network
-interface, subnet, or VPC. Logs are sent to either a CloudWatch Log Group
-or an S3 bucket.
+interface, subnet, or VPC. Logs are sent to a CloudWatch Log Group or a S3 Bucket.
 
 ## Example Usage
 
+### CloudWatch Logging
+
 ```hcl
-resource "aws_flow_log" "test_flow_log" {
-  log_destination      = "${aws_cloudwatch_log_group.test_log_group.arn}"
-  log_destination_type = "cloud-watch-logs"
-  iam_role_arn         = "${aws_iam_role.test_role.arn}"
-  resource_id          = "${aws_vpc.default.id}"
-  resource_type        = "VPC"
-  traffic_type         = "ALL"
+resource "aws_flow_log" "example" {
+  iam_role_arn    = "${aws_iam_role.example.arn}"
+  log_destination = "${aws_cloudwatch_log_group.example.arn}"
+  traffic_type    = "ALL"
+  vpc_id          = "${aws_vpc.example.id}"
 }
 
-resource "aws_cloudwatch_log_group" "test_log_group" {
-  name = "test_log_group"
+resource "aws_cloudwatch_log_group" "example" {
+  name = "example"
 }
 
 resource "aws_iam_role" "test_role" {
-  name = "test_role"
+  name = "example"
 
   assume_role_policy = <<EOF
 {
@@ -48,9 +47,9 @@ resource "aws_iam_role" "test_role" {
 EOF
 }
 
-resource "aws_iam_role_policy" "test_policy" {
-  name = "test_policy"
-  role = "${aws_iam_role.test_role.id}"
+resource "aws_iam_role_policy" "example" {
+  name = "example"
+  role = "${aws_iam_role.example.id}"
 
   policy = <<EOF
 {
@@ -73,26 +72,35 @@ EOF
 }
 ```
 
+### S3 Logging
+
+```hcl
+resource "aws_flow_log" "example" {
+  log_destination      = "${aws_s3_bucket.example.arn}"
+  log_destination_type = "s3"
+  traffic_type         = "ALL"
+  vpc_id               = "${aws_vpc.example.id}"
+}
+
+resource "aws_s3_bucket" "example" {
+  name = "example"
+}
+```
+
 ## Argument Reference
+
+~> **NOTE:** One of `eni_id`, `subnet_id`, or `vpc_id` must be specified.
 
 The following arguments are supported:
 
-* `log_destination` - (Optional) The destination to which the flow log data is to
-  be published. Flow log data can be published to an CloudWatch Logs log group or
-  an Amazon S3 bucket. The value specified for this parameter depends on the value
-  specified for `log_destination_type`.
-* `log_destination_type` - (Optional) Type of destination to which the flow log
-  data is to be published. Flow log data can be published to CloudWatch Logs or
-  Amazon S3. To publish flow log data to CloudWatch Logs, specify `cloud-watch-logs`.
-  To publish flow log data to Amazon S3, specify `s3`. Default: `cloud-watch-logs`
-* `iam_role_arn` - (Optional) The ARN for the IAM role that's used to post flow
-  logs to a CloudWatch Logs log group. **Required** if sending logs to
-  CloudWatch Logs.
-* `resource_id` - (Optional) A subnet, network interface, or VPC ID.
-* `resource_type` - (Optional) The type of resource on which to create the flow log.
-  Valid Values: `VPC`, `Subnet`, `NetworkInterface`
-* `traffic_type` - (Required) The type of traffic to capture. Valid values:
-  `ACCEPT`, `REJECT`, `ALL`
+* `traffic_type` - (Required) The type of traffic to capture. Valid values: `ACCEPT`,`REJECT`, `ALL`.
+* `eni_id` - (Optional) Elastic Network Interface ID to attach to
+* `iam_role_arn` - (Optional) The ARN for the IAM role that's used to post flow logs to a CloudWatch Logs log group
+* `log_destination_type` - (Optional) The type of the logging destination. Valid values: `cloud-watch-logs`, `s3`. Default: `cloud-watch-logs`.
+* `log_destination` - (Optional) The ARN of the logging destination.
+* `log_group_name` - (Optional) *Deprecated:* Use `log_destination` instead. The name of the CloudWatch log group.
+* `subnet_id` - (Optional) Subnet ID to attach to
+* `vpc_id` - (Optional) VPC ID to attach to
 
 The following arguments are supported for backwards compatibility but should not be used:
 

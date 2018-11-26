@@ -2,31 +2,80 @@ package aws
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 )
 
-func TestAccAWSFlowLog_importBasic(t *testing.T) {
-	resourceName := "aws_flow_log.test_flow_log_vpc"
+func TestAccAWSFlowLog_VPCID(t *testing.T) {
+	var flowLog ec2.FlowLog
+	cloudwatchLogGroupResourceName := "aws_cloudwatch_log_group.test"
+	iamRoleResourceName := "aws_iam_role.test"
+	resourceName := "aws_flow_log.test"
+	vpcResourceName := "aws_vpc.test"
+	rName := acctest.RandomWithPrefix("tf-acc-test")
 
-	rInt := acctest.RandInt()
-
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckFlowLogDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccFlowLogConfig_vpcOldSyntaxCloudWatch(rInt),
+				Config: testAccFlowLogConfig_VPCID(rName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckFlowLogExists(resourceName, &flowLog),
+					testAccCheckAWSFlowLogAttributes(&flowLog),
+					resource.TestCheckResourceAttrPair(resourceName, "iam_role_arn", iamRoleResourceName, "arn"),
+					resource.TestCheckResourceAttr(resourceName, "log_destination", ""),
+					resource.TestCheckResourceAttr(resourceName, "log_destination_type", "cloud-watch-logs"),
+					resource.TestCheckResourceAttrPair(resourceName, "log_group_name", cloudwatchLogGroupResourceName, "name"),
+					resource.TestCheckResourceAttr(resourceName, "traffic_type", "ALL"),
+					resource.TestCheckResourceAttrPair(resourceName, "vpc_id", vpcResourceName, "id"),
+				),
 			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config:             testAccFlowLogConfig_LogDestinationType_CloudWatchLogs(rName),
+				ExpectNonEmptyPlan: false,
+			},
+		},
+	})
+}
 
+func TestAccAWSFlowLog_SubnetID(t *testing.T) {
+	var flowLog ec2.FlowLog
+	cloudwatchLogGroupResourceName := "aws_cloudwatch_log_group.test"
+	iamRoleResourceName := "aws_iam_role.test"
+	resourceName := "aws_flow_log.test"
+	subnetResourceName := "aws_subnet.test"
+	rName := acctest.RandomWithPrefix("tf-acc-test")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckFlowLogDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccFlowLogConfig_SubnetID(rName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckFlowLogExists(resourceName, &flowLog),
+					testAccCheckAWSFlowLogAttributes(&flowLog),
+					resource.TestCheckResourceAttrPair(resourceName, "iam_role_arn", iamRoleResourceName, "arn"),
+					resource.TestCheckResourceAttr(resourceName, "log_destination", ""),
+					resource.TestCheckResourceAttr(resourceName, "log_destination_type", "cloud-watch-logs"),
+					resource.TestCheckResourceAttrPair(resourceName, "log_group_name", cloudwatchLogGroupResourceName, "name"),
+					resource.TestCheckResourceAttrPair(resourceName, "subnet_id", subnetResourceName, "id"),
+					resource.TestCheckResourceAttr(resourceName, "traffic_type", "ALL"),
+				),
+			},
 			{
 				ResourceName:      resourceName,
 				ImportState:       true,
@@ -36,218 +85,65 @@ func TestAccAWSFlowLog_importBasic(t *testing.T) {
 	})
 }
 
-func TestAccAWSFlowLog_vpcToCloudWatch(t *testing.T) {
+func TestAccAWSFlowLog_LogDestinationType_CloudWatchLogs(t *testing.T) {
 	var flowLog ec2.FlowLog
+	cloudwatchLogGroupResourceName := "aws_cloudwatch_log_group.test"
+	resourceName := "aws_flow_log.test"
+	rName := acctest.RandomWithPrefix("tf-acc-test")
 
-	rInt := acctest.RandInt()
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:      func() { testAccPreCheck(t) },
-		IDRefreshName: "aws_flow_log.test_flow_log_vpc",
-		Providers:     testAccProviders,
-		CheckDestroy:  testAccCheckFlowLogDestroy,
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckFlowLogDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccFlowLogConfig_vpcOldSyntaxCloudWatch(rInt),
+				Config: testAccFlowLogConfig_LogDestinationType_CloudWatchLogs(rName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckFlowLogExists("aws_flow_log.test_flow_log_vpc", &flowLog),
-					resource.TestCheckResourceAttr("aws_flow_log.test_flow_log_vpc", "log_destination_type", "cloud-watch-logs"),
-					resource.TestCheckResourceAttr("aws_flow_log.test_flow_log_vpc", "resource_type", "VPC"),
-					resource.TestCheckResourceAttr("aws_flow_log.test_flow_log_vpc", "traffic_type", "ALL"),
+					testAccCheckFlowLogExists(resourceName, &flowLog),
+					testAccCheckAWSFlowLogAttributes(&flowLog),
+					// We automatically trim :* from ARNs if present
+					testAccCheckResourceAttrRegionalARN(resourceName, "log_destination", "logs", fmt.Sprintf("log-group:%s", rName)),
+					resource.TestCheckResourceAttr(resourceName, "log_destination_type", "cloud-watch-logs"),
+					resource.TestCheckResourceAttrPair(resourceName, "log_group_name", cloudwatchLogGroupResourceName, "name"),
 				),
 			},
 			{
-				Config:             testAccFlowLogConfig_vpcNewSyntaxCloudWatch(rInt),
-				ExpectNonEmptyPlan: false,
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
 }
 
-func TestAccAWSFlowLog_vpcToCloudWatchStartWithNewSyntax(t *testing.T) {
+func TestAccAWSFlowLog_LogDestinationType_S3(t *testing.T) {
 	var flowLog ec2.FlowLog
+	s3ResourceName := "aws_s3_bucket.test"
+	resourceName := "aws_flow_log.test"
+	rName := acctest.RandomWithPrefix("tf-acc-test")
 
-	rInt := acctest.RandInt()
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:      func() { testAccPreCheck(t) },
-		IDRefreshName: "aws_flow_log.test_flow_log_vpc",
-		Providers:     testAccProviders,
-		CheckDestroy:  testAccCheckFlowLogDestroy,
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckFlowLogDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccFlowLogConfig_vpcNewSyntaxCloudWatch(rInt),
+				Config: testAccFlowLogConfig_LogDestinationType_S3(rName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckFlowLogExists("aws_flow_log.test_flow_log_vpc", &flowLog),
-					resource.TestCheckResourceAttr("aws_flow_log.test_flow_log_vpc", "log_destination_type", "cloud-watch-logs"),
-					resource.TestCheckResourceAttr("aws_flow_log.test_flow_log_vpc", "resource_type", "VPC"),
-					resource.TestCheckResourceAttr("aws_flow_log.test_flow_log_vpc", "traffic_type", "ALL"),
+					testAccCheckFlowLogExists(resourceName, &flowLog),
+					testAccCheckAWSFlowLogAttributes(&flowLog),
+					resource.TestCheckResourceAttrPair(resourceName, "log_destination", s3ResourceName, "arn"),
+					resource.TestCheckResourceAttr(resourceName, "log_destination_type", "s3"),
+					resource.TestCheckResourceAttr(resourceName, "log_group_name", ""),
 				),
 			},
 			{
-				Config:             testAccFlowLogConfig_vpcOldSyntaxCloudWatch(rInt),
-				ExpectNonEmptyPlan: false,
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
-}
-
-func TestAccAWSFlowLog_subnetToCloudWatch(t *testing.T) {
-	var flowLog ec2.FlowLog
-
-	rInt := acctest.RandInt()
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:      func() { testAccPreCheck(t) },
-		IDRefreshName: "aws_flow_log.test_flow_log_subnet",
-		Providers:     testAccProviders,
-		CheckDestroy:  testAccCheckFlowLogDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccFlowLogConfig_subnetOldSyntaxCloudWatch(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckFlowLogExists("aws_flow_log.test_flow_log_subnet", &flowLog),
-					resource.TestCheckResourceAttr("aws_flow_log.test_flow_log_subnet", "log_destination_type", "cloud-watch-logs"),
-					resource.TestCheckResourceAttr("aws_flow_log.test_flow_log_subnet", "resource_type", "Subnet"),
-					resource.TestCheckResourceAttr("aws_flow_log.test_flow_log_subnet", "traffic_type", "ACCEPT"),
-				),
-			},
-			{
-				Config:             testAccFlowLogConfig_subnetNewSyntaxCloudWatch(rInt),
-				ExpectNonEmptyPlan: false,
-			},
-		},
-	})
-}
-
-func TestAccAWSFlowLog_eniToCloudWatch(t *testing.T) {
-	var flowLog ec2.FlowLog
-
-	rInt := acctest.RandInt()
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:      func() { testAccPreCheck(t) },
-		IDRefreshName: "aws_flow_log.test_flow_log_eni",
-		Providers:     testAccProviders,
-		CheckDestroy:  testAccCheckFlowLogDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccFlowLogConfig_eniOldSyntaxCloudWatch(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckFlowLogExists("aws_flow_log.test_flow_log_eni", &flowLog),
-					resource.TestCheckResourceAttr("aws_flow_log.test_flow_log_eni", "log_destination_type", "cloud-watch-logs"),
-					resource.TestCheckResourceAttr("aws_flow_log.test_flow_log_eni", "resource_type", "NetworkInterface"),
-					resource.TestCheckResourceAttr("aws_flow_log.test_flow_log_eni", "traffic_type", "REJECT"),
-				),
-			},
-			{
-				Config:             testAccFlowLogConfig_eniNewSyntaxCloudWatch(rInt),
-				ExpectNonEmptyPlan: false,
-			},
-		},
-	})
-}
-
-func TestAccAWSFlowLog_vpcToS3(t *testing.T) {
-	var flowLog ec2.FlowLog
-
-	rInt := acctest.RandInt()
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:      func() { testAccPreCheck(t) },
-		IDRefreshName: "aws_flow_log.test_flow_log_vpc",
-		Providers:     testAccProviders,
-		CheckDestroy:  testAccCheckFlowLogDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccFlowLogConfig_vpcS3(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckFlowLogExists("aws_flow_log.test_flow_log_vpc", &flowLog),
-					resource.TestCheckResourceAttr("aws_flow_log.test_flow_log_vpc", "log_destination_type", "s3"),
-					resource.TestCheckResourceAttr("aws_flow_log.test_flow_log_vpc", "resource_type", "VPC"),
-					resource.TestCheckResourceAttr("aws_flow_log.test_flow_log_vpc", "traffic_type", "ALL"),
-				),
-			},
-		},
-	})
-}
-
-func TestAccAWSFlowLog_migrateState(t *testing.T) {
-	if os.Getenv(resource.TestEnvVar) == "" {
-		t.Skip()
-		return
-	}
-
-	cases := map[string]struct {
-		StateVersion int
-		ID           string
-		Attributes   map[string]string
-		Expected     map[string]string
-	}{
-		"v0_1_vpc_id": {
-			StateVersion: 0,
-			ID:           "some_id",
-			Attributes: map[string]string{
-				"vpc_id":         "vpc-12345678",
-				"log_group_name": "test",
-			},
-			Expected: map[string]string{
-				"resource_id":          "vpc-12345678",
-				"resource_type":        "VPC",
-				"log_destination_type": "cloud-watch-logs",
-			},
-		},
-		"v0_1_subnet_id": {
-			StateVersion: 0,
-			ID:           "some_id",
-			Attributes: map[string]string{
-				"subnet_id":      "sn-12345678",
-				"log_group_name": "test",
-			},
-			Expected: map[string]string{
-				"resource_id":          "sn-12345678",
-				"resource_type":        "Subnet",
-				"log_destination_type": "cloud-watch-logs",
-			},
-		},
-		"v0_1_eni_id": {
-			StateVersion: 0,
-			ID:           "some_id",
-			Attributes: map[string]string{
-				"eni_id":         "eni-12345678",
-				"log_group_name": "test",
-			},
-			Expected: map[string]string{
-				"resource_id":          "eni-12345678",
-				"resource_type":        "NetworkInterface",
-				"log_destination_type": "cloud-watch-logs",
-			},
-		},
-	}
-
-	testAccPreCheck(t)
-
-	for tn, tc := range cases {
-		is := &terraform.InstanceState{
-			ID:         tc.ID,
-			Attributes: tc.Attributes,
-		}
-		is, err := resourceAwsFlowLogMigrateState(tc.StateVersion, is, testAccProvider.Meta())
-		if err != nil {
-			t.Fatalf("bad: %s, err: %#v", tn, err)
-		}
-
-		for k, v := range tc.Expected {
-			if is.Attributes[k] != v {
-				t.Fatalf("Bad migration (%s): %s\n\n expected: %s", k, is.Attributes[k], v)
-			}
-		}
-
-		_, err = arn.Parse(is.Attributes["log_destination"])
-		if err != nil {
-			t.Fatalf("invalid ARN: %s, err: %#v", is.Attributes["log_destination"], err)
-		}
-	}
 }
 
 func testAccCheckFlowLogExists(n string, flowLog *ec2.FlowLog) resource.TestCheckFunc {
@@ -269,17 +165,25 @@ func testAccCheckFlowLogExists(n string, flowLog *ec2.FlowLog) resource.TestChec
 		if err != nil {
 			return err
 		}
-		if len(resp.FlowLogs) == 0 {
-			return fmt.Errorf("No Flow Logs found for id (%s)", rs.Primary.ID)
+
+		if len(resp.FlowLogs) > 0 {
+			*flowLog = *resp.FlowLogs[0]
+			return nil
 		}
+		return fmt.Errorf("No Flow Logs found for id (%s)", rs.Primary.ID)
+	}
+}
 
-		if *resp.FlowLogs[0].FlowLogStatus != "ACTIVE" {
-			return fmt.Errorf("Flow Log status is not ACTIVE, got: %s", *resp.FlowLogs[0].FlowLogStatus)
+func testAccCheckAWSFlowLogAttributes(flowLog *ec2.FlowLog) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if flowLog.FlowLogStatus != nil && *flowLog.FlowLogStatus == "ACTIVE" {
+			return nil
 		}
-
-		*flowLog = *resp.FlowLogs[0]
-
-		return nil
+		if flowLog.FlowLogStatus == nil {
+			return fmt.Errorf("Flow Log status is not ACTIVE, is nil")
+		} else {
+			return fmt.Errorf("Flow Log status is not ACTIVE, got: %s", *flowLog.FlowLogStatus)
+		}
 	}
 }
 
@@ -295,19 +199,18 @@ func testAccCheckFlowLogDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccFlowLogConfig_vpcOldSyntaxCloudWatch(rInt int) string {
+func testAccFlowLogConfig_LogDestinationType_CloudWatchLogs(rName string) string {
 	return fmt.Sprintf(`
-resource "aws_vpc" "default" {
+resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
 
   tags {
-    Name = "terraform-testacc-flow-log-vpc"
+    Name = %q
   }
 }
 
-resource "aws_iam_role" "test_role" {
-  name = "tf_test_flow_log_vpc_%d"
-
+resource "aws_iam_role" "test" {
+  name = %q
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -328,32 +231,110 @@ resource "aws_iam_role" "test_role" {
 EOF
 }
 
-resource "aws_cloudwatch_log_group" "foobar" {
-  name = "tf-test-fl-%d"
+resource "aws_cloudwatch_log_group" "test" {
+  name = %q
 }
 
-resource "aws_flow_log" "test_flow_log_vpc" {
-  log_group_name = "${aws_cloudwatch_log_group.foobar.name}"
-  iam_role_arn   = "${aws_iam_role.test_role.arn}"
-  vpc_id         = "${aws_vpc.default.id}"
+resource "aws_flow_log" "test" {
+  iam_role_arn         = "${aws_iam_role.test.arn}"
+  log_destination      = "${aws_cloudwatch_log_group.test.arn}"
+  log_destination_type = "cloud-watch-logs"
+  traffic_type         = "ALL"
+  vpc_id               = "${aws_vpc.test.id}"
+}
+`, rName, rName, rName)
+}
+
+func testAccFlowLogConfig_LogDestinationType_S3(rName string) string {
+	return fmt.Sprintf(`
+resource "aws_vpc" "test" {
+  cidr_block = "10.0.0.0/16"
+
+  tags {
+    Name = %q
+  }
+}
+
+resource "aws_s3_bucket" "test" {
+  bucket        = %q
+  force_destroy = true
+}
+
+resource "aws_flow_log" "test" {
+  log_destination      = "${aws_s3_bucket.test.arn}"
+  log_destination_type = "s3"
+  traffic_type         = "ALL"
+  vpc_id               = "${aws_vpc.test.id}"
+}
+`, rName, rName)
+}
+
+func testAccFlowLogConfig_SubnetID(rName string) string {
+	return fmt.Sprintf(`
+resource "aws_vpc" "test" {
+  cidr_block = "10.0.0.0/16"
+
+  tags {
+    Name = %q
+  }
+}
+
+resource "aws_subnet" "test" {
+  cidr_block = "10.0.1.0/24"
+  vpc_id     = "${aws_vpc.test.id}"
+
+  tags {
+    Name = %q
+  }
+}
+
+resource "aws_iam_role" "test" {
+  name = %q
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": [
+          "ec2.amazonaws.com"
+        ]
+      },
+      "Action": [
+        "sts:AssumeRole"
+      ]
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_cloudwatch_log_group" "test" {
+  name = %q
+}
+
+resource "aws_flow_log" "test" {
+  iam_role_arn   = "${aws_iam_role.test.arn}"
+  log_group_name = "${aws_cloudwatch_log_group.test.name}"
+  subnet_id      = "${aws_subnet.test.id}"
   traffic_type   = "ALL"
 }
-`, rInt, rInt)
+`, rName, rName, rName, rName)
 }
 
-func testAccFlowLogConfig_vpcNewSyntaxCloudWatch(rInt int) string {
+func testAccFlowLogConfig_VPCID(rName string) string {
 	return fmt.Sprintf(`
-resource "aws_vpc" "default" {
+resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
 
   tags {
-    Name = "terraform-testacc-flow-log-vpc"
+    Name = %q
   }
 }
 
-resource "aws_iam_role" "test_role" {
-  name = "tf_test_flow_log_vpc_%d"
-
+resource "aws_iam_role" "test" {
+  name = %q
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -374,280 +355,15 @@ resource "aws_iam_role" "test_role" {
 EOF
 }
 
-resource "aws_cloudwatch_log_group" "foobar" {
-  name = "tf-test-fl-%d"
+resource "aws_cloudwatch_log_group" "test" {
+  name = %q
 }
 
-resource "aws_flow_log" "test_flow_log_vpc" {
-  log_destination      = "${aws_cloudwatch_log_group.foobar.arn}"
-  log_destination_type = "cloud-watch-logs"
-  iam_role_arn         = "${aws_iam_role.test_role.arn}"
-  resource_id          = "${aws_vpc.default.id}"
-  resource_type        = "VPC"
-  traffic_type         = "ALL"
+resource "aws_flow_log" "test" {
+  iam_role_arn   = "${aws_iam_role.test.arn}"
+  log_group_name = "${aws_cloudwatch_log_group.test.name}"
+  traffic_type   = "ALL"
+  vpc_id         = "${aws_vpc.test.id}"
 }
-`, rInt, rInt)
-}
-
-func testAccFlowLogConfig_vpcS3(rInt int) string {
-	return fmt.Sprintf(`
-resource "aws_vpc" "default" {
-  cidr_block = "10.0.0.0/16"
-
-  tags {
-    Name = "terraform-testacc-flow-log-vpc"
-  }
-}
-
-resource "aws_s3_bucket" "foobar" {
-  bucket = "tf-test-fl-%d"
-}
-
-resource "aws_flow_log" "test_flow_log_vpc" {
-  log_destination      = "${aws_s3_bucket.foobar.arn}"
-  log_destination_type = "s3"
-  resource_id          = "${aws_vpc.default.id}"
-  resource_type        = "VPC"
-  traffic_type         = "ALL"
-}
-`, rInt)
-}
-
-func testAccFlowLogConfig_subnetOldSyntaxCloudWatch(rInt int) string {
-	return fmt.Sprintf(`
-resource "aws_vpc" "default" {
-  cidr_block = "10.0.0.0/16"
-
-  tags {
-    Name = "terraform-testacc-flow-log-subnet"
-  }
-}
-
-resource "aws_subnet" "test_subnet" {
-  vpc_id     = "${aws_vpc.default.id}"
-  cidr_block = "10.0.1.0/24"
-
-  tags {
-    Name = "tf-acc-flow-log-subnet"
-  }
-}
-
-resource "aws_iam_role" "test_role" {
-  name = "tf_test_flow_log_subnet_%d"
-
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": [
-          "ec2.amazonaws.com"
-        ]
-      },
-      "Action": [
-        "sts:AssumeRole"
-      ]
-    }
-  ]
-}
-EOF
-}
-
-resource "aws_cloudwatch_log_group" "foobar" {
-  name = "tf-test-fl-%d"
-}
-
-resource "aws_flow_log" "test_flow_log_subnet" {
-  log_group_name = "${aws_cloudwatch_log_group.foobar.name}"
-  iam_role_arn   = "${aws_iam_role.test_role.arn}"
-  subnet_id      = "${aws_subnet.test_subnet.id}"
-  traffic_type   = "ACCEPT"
-}
-`, rInt, rInt)
-}
-
-func testAccFlowLogConfig_subnetNewSyntaxCloudWatch(rInt int) string {
-	return fmt.Sprintf(`
-resource "aws_vpc" "default" {
-  cidr_block = "10.0.0.0/16"
-
-  tags {
-    Name = "terraform-testacc-flow-log-subnet"
-  }
-}
-
-resource "aws_subnet" "test_subnet" {
-  vpc_id     = "${aws_vpc.default.id}"
-  cidr_block = "10.0.1.0/24"
-
-  tags {
-    Name = "tf-acc-flow-log-subnet"
-  }
-}
-
-resource "aws_iam_role" "test_role" {
-  name = "tf_test_flow_log_subnet_%d"
-
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": [
-          "ec2.amazonaws.com"
-        ]
-      },
-      "Action": [
-        "sts:AssumeRole"
-      ]
-    }
-  ]
-}
-EOF
-}
-
-resource "aws_cloudwatch_log_group" "foobar" {
-  name = "tf-test-fl-%d"
-}
-
-resource "aws_flow_log" "test_flow_log_subnet" {
-  log_destination = "${aws_cloudwatch_log_group.foobar.arn}"
-  iam_role_arn    = "${aws_iam_role.test_role.arn}"
-  resource_id     = "${aws_subnet.test_subnet.id}"
-  resource_type   = "Subnet"
-  traffic_type    = "ACCEPT"
-}
-`, rInt, rInt)
-}
-
-func testAccFlowLogConfig_eniOldSyntaxCloudWatch(rInt int) string {
-	return fmt.Sprintf(`
-resource "aws_vpc" "default" {
-  cidr_block = "10.0.0.0/16"
-
-  tags {
-    Name = "terraform-testacc-flow-log-eni"
-  }
-}
-
-resource "aws_subnet" "test_subnet" {
-  vpc_id     = "${aws_vpc.default.id}"
-  cidr_block = "10.0.1.0/24"
-
-  tags {
-    Name = "tf-acc-flow-log-eni"
-  }
-}
-
-resource "aws_network_interface" "test_eni" {
-  subnet_id = "${aws_subnet.test_subnet.id}"
-
-  tags {
-    Name = "tf-acc-flow-log-eni"
-  }
-}
-
-resource "aws_iam_role" "test_role" {
-  name = "tf_test_flow_log_eni_%d"
-
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": [
-          "ec2.amazonaws.com"
-        ]
-      },
-      "Action": [
-        "sts:AssumeRole"
-      ]
-    }
-  ]
-}
-EOF
-}
-
-resource "aws_cloudwatch_log_group" "foobar" {
-  name = "tf-test-fl-%d"
-}
-
-resource "aws_flow_log" "test_flow_log_eni" {
-  log_group_name = "${aws_cloudwatch_log_group.foobar.name}"
-  iam_role_arn   = "${aws_iam_role.test_role.arn}"
-  eni_id         = "${aws_network_interface.test_eni.id}"
-  traffic_type   = "REJECT"
-}
-`, rInt, rInt)
-}
-
-func testAccFlowLogConfig_eniNewSyntaxCloudWatch(rInt int) string {
-	return fmt.Sprintf(`
-resource "aws_vpc" "default" {
-  cidr_block = "10.0.0.0/16"
-
-  tags {
-    Name = "terraform-testacc-flow-log-eni"
-  }
-}
-
-resource "aws_subnet" "test_subnet" {
-  vpc_id     = "${aws_vpc.default.id}"
-  cidr_block = "10.0.1.0/24"
-
-  tags {
-    Name = "tf-acc-flow-log-eni"
-  }
-}
-
-resource "aws_network_interface" "test_eni" {
-  subnet_id = "${aws_subnet.test_subnet.id}"
-
-  tags {
-    Name = "tf-acc-flow-log-eni"
-  }
-}
-
-resource "aws_iam_role" "test_role" {
-  name = "tf_test_flow_log_eni_%d"
-
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": [
-          "ec2.amazonaws.com"
-        ]
-      },
-      "Action": [
-        "sts:AssumeRole"
-      ]
-    }
-  ]
-}
-EOF
-}
-
-resource "aws_cloudwatch_log_group" "foobar" {
-  name = "tf-test-fl-%d"
-}
-
-resource "aws_flow_log" "test_flow_log_eni" {
-  log_destination      = "${aws_cloudwatch_log_group.foobar.arn}"
-  log_destination_type = "cloud-watch-logs"
-  iam_role_arn         = "${aws_iam_role.test_role.arn}"
-  resource_id          = "${aws_network_interface.test_eni.id}"
-  resource_type        = "NetworkInterface"
-  traffic_type         = "REJECT"
-}
-`, rInt, rInt)
+`, rName, rName, rName)
 }

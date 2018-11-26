@@ -29,7 +29,7 @@ func TestAccAWSLambdaEventSourceMapping_kinesis_basic(t *testing.T) {
 	uFuncName := fmt.Sprintf("tf_acc_lambda_esm_basic_updated_%s", rString)
 	uFuncArnRe := regexp.MustCompile(":" + uFuncName + "$")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLambdaEventSourceMappingDestroy,
@@ -72,7 +72,7 @@ func TestAccAWSLambdaEventSourceMapping_kinesis_removeBatchSize(t *testing.T) {
 	funcName := fmt.Sprintf("tf_acc_lambda_esm_basic_%s", rString)
 	uFuncName := fmt.Sprintf("tf_acc_lambda_esm_basic_updated_%s", rString)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLambdaEventSourceMappingDestroy,
@@ -111,7 +111,7 @@ func TestAccAWSLambdaEventSourceMapping_sqs_basic(t *testing.T) {
 	uFuncName := fmt.Sprintf("tf_acc_lambda_sqs_basic_updated_%s", rString)
 	uFuncArnRe := regexp.MustCompile(":" + uFuncName + "$")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLambdaEventSourceMappingDestroy,
@@ -152,7 +152,7 @@ func TestAccAWSLambdaEventSourceMapping_sqs_withFunctionName(t *testing.T) {
 	funcName := fmt.Sprintf("tf_acc_lambda_sqs_basic_%s", rString)
 	funcArnRe := regexp.MustCompile(":" + funcName + "$")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLambdaEventSourceMappingDestroy,
@@ -182,7 +182,7 @@ func TestAccAWSLambdaEventSourceMapping_kinesis_import(t *testing.T) {
 	funcName := fmt.Sprintf("tf_acc_lambda_esm_import_%s", rString)
 	uFuncName := fmt.Sprintf("tf_acc_lambda_esm_import_updated_%s", rString)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLambdaEventSourceMappingDestroy,
@@ -212,7 +212,7 @@ func TestAccAWSLambdaEventSourceMapping_kinesis_disappears(t *testing.T) {
 	funcName := fmt.Sprintf("tf_acc_lambda_esm_import_%s", rString)
 	uFuncName := fmt.Sprintf("tf_acc_lambda_esm_import_updated_%s", rString)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLambdaEventSourceMappingDestroy,
@@ -240,7 +240,7 @@ func TestAccAWSLambdaEventSourceMapping_sqsDisappears(t *testing.T) {
 	funcName := fmt.Sprintf("tf_acc_lambda_sqs_import_%s", rString)
 	uFuncName := fmt.Sprintf("tf_acc_lambda_sqs_import_updated_%s", rString)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLambdaEventSourceMappingDestroy,
@@ -268,7 +268,7 @@ func TestAccAWSLambdaEventSourceMapping_changesInEnabledAreDetected(t *testing.T
 	funcName := fmt.Sprintf("tf_acc_lambda_sqs_import_%s", rString)
 	uFuncName := fmt.Sprintf("tf_acc_lambda_sqs_import_updated_%s", rString)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -279,6 +279,38 @@ func TestAccAWSLambdaEventSourceMapping_changesInEnabledAreDetected(t *testing.T
 					testAccCheckAWSLambdaEventSourceMappingIsBeingDisabled(&conf),
 				),
 				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
+func TestAccAWSLambdaEventSourceMapping_StartingPositionTimestamp(t *testing.T) {
+	var conf lambda.EventSourceMappingConfiguration
+	rName := acctest.RandomWithPrefix("tf-acc-test")
+	resourceName := "aws_lambda_event_source_mapping.test"
+	startingPositionTimestamp := time.Now().UTC().Format(time.RFC3339)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLambdaEventSourceMappingDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAWSLambdaEventSourceMappingConfigKinesisStartingPositionTimestamp(rName, startingPositionTimestamp),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckAwsLambdaEventSourceMappingExists(resourceName, &conf),
+					resource.TestCheckResourceAttr(resourceName, "starting_position", "AT_TIMESTAMP"),
+					resource.TestCheckResourceAttr(resourceName, "starting_position_timestamp", startingPositionTimestamp),
+				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"starting_position",
+					"starting_position_timestamp",
+				},
 			},
 		},
 	})
@@ -447,6 +479,84 @@ func testAccCheckAWSLambdaEventSourceMappingAttributes(mapping *lambda.EventSour
 
 		return nil
 	}
+}
+
+func testAccAWSLambdaEventSourceMappingConfigKinesisBase(rName string) string {
+	return fmt.Sprintf(`
+resource "aws_iam_role" "test" {
+  name = %q
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "test" {
+  role = "${aws_iam_role.test.name}"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+      {
+          "Effect": "Allow",
+          "Action": [
+            "kinesis:GetRecords",
+            "kinesis:GetShardIterator",
+            "kinesis:DescribeStream"
+          ],
+          "Resource": "*"
+      },
+      {
+          "Effect": "Allow",
+          "Action": [
+            "kinesis:ListStreams"
+          ],
+          "Resource": "*"
+      }
+  ]
+}
+EOF
+}
+
+resource "aws_kinesis_stream" "test" {
+  name        = %q
+  shard_count = 1
+}
+
+resource "aws_lambda_function" "test" {
+  filename      = "test-fixtures/lambdatest.zip"
+  function_name = %q
+  handler       = "exports.example"
+  role          = "${aws_iam_role.test.arn}"
+  runtime       = "nodejs4.3"
+}
+`, rName, rName, rName)
+}
+
+func testAccAWSLambdaEventSourceMappingConfigKinesisStartingPositionTimestamp(rName, startingPositionTimestamp string) string {
+	return testAccAWSLambdaEventSourceMappingConfigKinesisBase(rName) + fmt.Sprintf(`
+resource "aws_lambda_event_source_mapping" "test" {
+  batch_size                  = 100
+  enabled                     = true
+  event_source_arn            = "${aws_kinesis_stream.test.arn}"
+  function_name               = "${aws_lambda_function.test.arn}"
+  starting_position           = "AT_TIMESTAMP"
+  starting_position_timestamp = %q
+}
+`, startingPositionTimestamp)
 }
 
 func testAccAWSLambdaEventSourceMappingConfig_kinesis(roleName, policyName, attName, streamName,

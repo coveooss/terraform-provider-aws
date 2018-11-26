@@ -34,3 +34,4 @@ website/vendor
 *.winfile eol=crlf
 dist
 /.vs
+node_modules
