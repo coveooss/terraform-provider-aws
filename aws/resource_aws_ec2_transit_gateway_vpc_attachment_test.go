@@ -221,6 +221,37 @@ func TestAccAWSEc2TransitGatewayVpcAttachment_Tags(t *testing.T) {
 	})
 }
 
+func TestAccAWSEc2TransitGatewayVpcAttachment_TransitGatewayDefaultRouteTableAssociationAndPropagationDisabled(t *testing.T) {
+	var transitGateway1 ec2.TransitGateway
+	var transitGatewayVpcAttachment1 ec2.TransitGatewayVpcAttachment
+	resourceName := "aws_ec2_transit_gateway_vpc_attachment.test"
+	transitGatewayResourceName := "aws_ec2_transit_gateway.test"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckAWSEc2TransitGatewayVpcAttachmentDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAWSEc2TransitGatewayVpcAttachmentConfigTransitGatewayDefaultRouteTableAssociationAndPropagationDisabled(),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckAWSEc2TransitGatewayExists(transitGatewayResourceName, &transitGateway1),
+					testAccCheckAWSEc2TransitGatewayVpcAttachmentExists(resourceName, &transitGatewayVpcAttachment1),
+					testAccCheckAWSEc2TransitGatewayAssociationDefaultRouteTableVpcAttachmentNotAssociated(&transitGateway1, &transitGatewayVpcAttachment1),
+					testAccCheckAWSEc2TransitGatewayPropagationDefaultRouteTableVpcAttachmentNotPropagated(&transitGateway1, &transitGatewayVpcAttachment1),
+					resource.TestCheckResourceAttr(resourceName, "transit_gateway_default_route_table_association", "false"),
+					resource.TestCheckResourceAttr(resourceName, "transit_gateway_default_route_table_propagation", "false"),
+				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestAccAWSEc2TransitGatewayVpcAttachment_TransitGatewayDefaultRouteTableAssociation(t *testing.T) {
 	var transitGateway1, transitGateway2, transitGateway3 ec2.TransitGateway
 	var transitGatewayVpcAttachment1, transitGatewayVpcAttachment2, transitGatewayVpcAttachment3 ec2.TransitGatewayVpcAttachment
@@ -413,7 +444,7 @@ func testAccAWSEc2TransitGatewayVpcAttachmentConfig() string {
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
 
-  tags {
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }
@@ -422,7 +453,7 @@ resource "aws_subnet" "test" {
   cidr_block = "10.0.0.0/24"
   vpc_id     = "${aws_vpc.test.id}"
 
-  tags {
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }
@@ -442,7 +473,7 @@ func testAccAWSEc2TransitGatewayVpcAttachmentConfigDnsSupport(dnsSupport string)
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
 
-  tags {
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }
@@ -451,7 +482,7 @@ resource "aws_subnet" "test" {
   cidr_block = "10.0.0.0/24"
   vpc_id     = "${aws_vpc.test.id}"
 
-  tags {
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }
@@ -473,7 +504,7 @@ resource "aws_vpc" "test" {
   assign_generated_ipv6_cidr_block = true
   cidr_block                       = "10.0.0.0/16"
 
-  tags {
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }
@@ -483,7 +514,7 @@ resource "aws_subnet" "test" {
   ipv6_cidr_block = "${cidrsubnet(aws_vpc.test.ipv6_cidr_block, 8, 1)}"
   vpc_id          = "${aws_vpc.test.id}"
 
-  tags {
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }
@@ -506,7 +537,7 @@ data "aws_availability_zones" "available" {}
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
 
-  tags {
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }
@@ -518,7 +549,7 @@ resource "aws_subnet" "test" {
   cidr_block        = "10.0.${count.index}.0/24"
   vpc_id            = "${aws_vpc.test.id}"
 
-  tags {
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }
@@ -540,7 +571,7 @@ data "aws_availability_zones" "available" {}
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
 
-  tags {
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }
@@ -552,7 +583,7 @@ resource "aws_subnet" "test" {
   cidr_block        = "10.0.${count.index}.0/24"
   vpc_id            = "${aws_vpc.test.id}"
 
-  tags {
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }
@@ -572,7 +603,7 @@ func testAccAWSEc2TransitGatewayVpcAttachmentConfigTags1(tagKey1, tagValue1 stri
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
 
-  tags {
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }
@@ -581,7 +612,7 @@ resource "aws_subnet" "test" {
   cidr_block = "10.0.0.0/24"
   vpc_id     = "${aws_vpc.test.id}"
 
-  tags {
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }
@@ -593,7 +624,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "test" {
   transit_gateway_id = "${aws_ec2_transit_gateway.test.id}"
   vpc_id             = "${aws_vpc.test.id}"
 
-  tags {
+  tags = {
     %q = %q
   }
 }
@@ -605,7 +636,7 @@ func testAccAWSEc2TransitGatewayVpcAttachmentConfigTags2(tagKey1, tagValue1, tag
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
 
-  tags {
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }
@@ -614,7 +645,7 @@ resource "aws_subnet" "test" {
   cidr_block = "10.0.0.0/24"
   vpc_id     = "${aws_vpc.test.id}"
 
-  tags {
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }
@@ -626,7 +657,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "test" {
   transit_gateway_id = "${aws_ec2_transit_gateway.test.id}"
   vpc_id             = "${aws_vpc.test.id}"
 
-  tags {
+  tags = {
     %q = %q
     %q = %q
   }
@@ -634,12 +665,12 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "test" {
 `, tagKey1, tagValue1, tagKey2, tagValue2)
 }
 
-func testAccAWSEc2TransitGatewayVpcAttachmentConfigTransitGatewayDefaultRouteTableAssociation(transitGatewayDefaultRouteTableAssociation bool) string {
+func testAccAWSEc2TransitGatewayVpcAttachmentConfigTransitGatewayDefaultRouteTableAssociationAndPropagationDisabled() string {
 	return fmt.Sprintf(`
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
 
-  tags {
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }
@@ -648,7 +679,41 @@ resource "aws_subnet" "test" {
   cidr_block = "10.0.0.0/24"
   vpc_id     = "${aws_vpc.test.id}"
 
-  tags {
+  tags = {
+    Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
+  }
+}
+
+resource "aws_ec2_transit_gateway" "test" {
+  default_route_table_association = "disable"
+  default_route_table_propagation = "disable"
+}
+
+resource "aws_ec2_transit_gateway_vpc_attachment" "test" {
+  subnet_ids                                      = ["${aws_subnet.test.id}"]
+  transit_gateway_default_route_table_association = false
+  transit_gateway_default_route_table_propagation = false
+  transit_gateway_id                              = "${aws_ec2_transit_gateway.test.id}"
+  vpc_id                                          = "${aws_vpc.test.id}"
+}
+`)
+}
+
+func testAccAWSEc2TransitGatewayVpcAttachmentConfigTransitGatewayDefaultRouteTableAssociation(transitGatewayDefaultRouteTableAssociation bool) string {
+	return fmt.Sprintf(`
+resource "aws_vpc" "test" {
+  cidr_block = "10.0.0.0/16"
+
+  tags = {
+    Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
+  }
+}
+
+resource "aws_subnet" "test" {
+  cidr_block = "10.0.0.0/24"
+  vpc_id     = "${aws_vpc.test.id}"
+
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }
@@ -669,7 +734,7 @@ func testAccAWSEc2TransitGatewayVpcAttachmentConfigTransitGatewayDefaultRouteTab
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
 
-  tags {
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }
@@ -678,7 +743,7 @@ resource "aws_subnet" "test" {
   cidr_block = "10.0.0.0/24"
   vpc_id     = "${aws_vpc.test.id}"
 
-  tags {
+  tags = {
     Name = "tf-acc-test-ec2-transit-gateway-vpc-attachment"
   }
 }

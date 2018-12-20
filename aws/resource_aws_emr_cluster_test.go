@@ -758,7 +758,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "168.31.0.0/16"
   enable_dns_hostnames = true
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster-bootstrap"
   }
 }
@@ -767,7 +767,7 @@ resource "aws_subnet" "main" {
   vpc_id     = "${aws_vpc.main.id}"
   cidr_block = "168.31.0.0/20"
 
-  tags {
+  tags = {
     Name = "tf-acc-emr-cluster-bootstrap"
   }
 }
@@ -815,7 +815,7 @@ resource "aws_security_group" "allow_all" {
     ignore_changes = ["ingress", "egress"]
   }
 
-  tags {
+  tags = {
     Name = "emr_test"
   }
 }
@@ -865,7 +865,7 @@ resource "aws_emr_cluster" "tf-test-cluster" {
   core_instance_type   = "c4.large"
   core_instance_count  = 1
 
-  tags {
+  tags = {
     role     = "rolename"
     dns_zone = "env_zone"
     env      = "env"
@@ -917,7 +917,7 @@ resource "aws_security_group" "allow_all" {
     ignore_changes = ["ingress", "egress"]
   }
 
-  tags {
+  tags = {
     Name = "emr_test"
   }
 }
@@ -926,7 +926,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "168.31.0.0/16"
   enable_dns_hostnames = true
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster"
   }
 }
@@ -935,7 +935,7 @@ resource "aws_subnet" "main" {
   vpc_id     = "${aws_vpc.main.id}"
   cidr_block = "168.31.0.0/20"
 
-  tags {
+  tags = {
     Name = "tf-acc-emr-cluster"
   }
 }
@@ -1178,7 +1178,7 @@ EOF
   core_instance_type   = "c4.large"
   core_instance_count  = 1
 
-  tags {
+  tags = {
     role     = "rolename"
     dns_zone = "env_zone"
     env      = "env"
@@ -1230,7 +1230,7 @@ resource "aws_security_group" "allow_all" {
     ignore_changes = ["ingress", "egress"]
   }
 
-  tags {
+  tags = {
     Name = "emr_test"
   }
 }
@@ -1239,7 +1239,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "168.31.0.0/16"
   enable_dns_hostnames = true
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster"
   }
 }
@@ -1248,7 +1248,7 @@ resource "aws_subnet" "main" {
   vpc_id     = "${aws_vpc.main.id}"
   cidr_block = "168.31.0.0/20"
 
-  tags {
+  tags = {
     Name = "tf-acc-emr-cluster"
   }
 }
@@ -1553,7 +1553,7 @@ resource "aws_security_group" "allow_all" {
     ignore_changes = ["ingress", "egress"]
   }
 
-  tags {
+  tags = {
     Name = "emr_test"
   }
 }
@@ -1562,7 +1562,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "168.31.0.0/16"
   enable_dns_hostnames = true
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster"
   }
 }
@@ -1571,7 +1571,7 @@ resource "aws_subnet" "main" {
   vpc_id     = "${aws_vpc.main.id}"
   cidr_block = "168.31.0.0/20"
 
-  tags {
+  tags = {
     Name = "tf-acc-emr-cluster"
   }
 }
@@ -1841,7 +1841,7 @@ resource "aws_security_group" "allow_all" {
     ignore_changes = ["ingress", "egress"]
   }
 
-  tags {
+  tags = {
     Name = "emr_test"
   }
 }
@@ -1850,7 +1850,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster-kerberos-cluster-dedicated-kdc"
   }
 }
@@ -1861,7 +1861,7 @@ resource "aws_subnet" "main" {
   cidr_block        = "10.0.${count.index}.0/24"
   vpc_id            = "${aws_vpc.main.id}"
 
-  tags {
+  tags = {
     Name = "tf-acc-emr-cluster-kerberos-cluster-dedicated-kdc"
   }
 }
@@ -1869,7 +1869,7 @@ resource "aws_subnet" "main" {
 resource "aws_internet_gateway" "gw" {
   vpc_id = "${aws_vpc.main.id}"
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster-kerberos-cluster-dedicated-kdc"
   }
 }
@@ -1914,7 +1914,7 @@ resource "aws_emr_cluster" "tf-test-cluster" {
 
   security_configuration = "${aws_emr_security_configuration.foo.name}"
 
-  tags {
+  tags = {
     role     = "rolename"
     dns_zone = "env_zone"
     env      = "env"
@@ -1963,7 +1963,7 @@ resource "aws_security_group" "allow_all" {
     ignore_changes = ["ingress", "egress"]
   }
 
-  tags {
+  tags = {
     Name = "emr_test"
   }
 }
@@ -1972,7 +1972,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "168.31.0.0/16"
   enable_dns_hostnames = true
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster-security-configuration"
   }
 }
@@ -1981,7 +1981,7 @@ resource "aws_subnet" "main" {
   vpc_id     = "${aws_vpc.main.id}"
   cidr_block = "168.31.0.0/20"
 
-  tags {
+  tags = {
     Name = "tf-acc-emr-cluster-security-configuration"
   }
 }
@@ -2337,7 +2337,7 @@ resource "aws_security_group" "allow_all" {
     ignore_changes = ["ingress", "egress"]
   }
 
-  tags {
+  tags = {
     Name = "emr_test"
   }
 }
@@ -2346,7 +2346,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster-step"
   }
 }
@@ -2357,7 +2357,7 @@ resource "aws_subnet" "main" {
   cidr_block        = "10.0.${count.index}.0/24"
   vpc_id            = "${aws_vpc.main.id}"
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster-step"
   }
 }
@@ -2365,7 +2365,7 @@ resource "aws_subnet" "main" {
 resource "aws_internet_gateway" "gw" {
   vpc_id = "${aws_vpc.main.id}"
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster-step"
   }
 }
@@ -2452,7 +2452,7 @@ EOT
     }
   ]
 
-  tags {
+  tags = {
     role     = "rolename"
     dns_zone = "env_zone"
     env      = "env"
@@ -2501,7 +2501,7 @@ resource "aws_security_group" "allow_all" {
     ignore_changes = ["ingress", "egress"]
   }
 
-  tags {
+  tags = {
     Name = "emr_test"
   }
 }
@@ -2510,7 +2510,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "168.31.0.0/16"
   enable_dns_hostnames = true
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster-instance-groups"
   }
 }
@@ -2519,7 +2519,7 @@ resource "aws_subnet" "main" {
   vpc_id     = "${aws_vpc.main.id}"
   cidr_block = "168.31.0.0/20"
 
-  tags {
+  tags = {
     Name = "tf-acc-emr-cluster-instance-groups"
   }
 }
@@ -2802,7 +2802,7 @@ EOT
     }
   ]
 
-  tags {
+  tags = {
     role     = "rolename"
     dns_zone = "env_zone"
     env      = "env"
@@ -2849,7 +2849,7 @@ resource "aws_security_group" "allow_all" {
     ignore_changes = ["ingress", "egress"]
   }
 
-  tags {
+  tags = {
     Name = "emr_test"
   }
 }
@@ -2858,7 +2858,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "168.31.0.0/16"
   enable_dns_hostnames = true
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster-instance-groups"
   }
 }
@@ -2867,7 +2867,7 @@ resource "aws_subnet" "main" {
   vpc_id     = "${aws_vpc.main.id}"
   cidr_block = "168.31.0.0/20"
 
-  tags {
+  tags = {
     Name = "tf-acc-emr-cluster-instance-groups"
   }
 }
@@ -3102,7 +3102,7 @@ resource "aws_emr_cluster" "tf-test-cluster" {
   core_instance_type   = "c4.large"
   core_instance_count  = 1
 
-  tags {
+  tags = {
     role     = "rolename"
     dns_zone = "env_zone"
     env      = "env"
@@ -3151,7 +3151,7 @@ resource "aws_security_group" "allow_all" {
     ignore_changes = ["ingress", "egress"]
   }
 
-  tags {
+  tags = {
     Name = "emr_test"
   }
 }
@@ -3160,7 +3160,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "168.31.0.0/16"
   enable_dns_hostnames = true
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster-termination-policy"
   }
 }
@@ -3169,7 +3169,7 @@ resource "aws_subnet" "main" {
   vpc_id     = "${aws_vpc.main.id}"
   cidr_block = "168.31.0.0/20"
 
-  tags {
+  tags = {
     Name = "tf-acc-emr-cluster-termination-policy"
   }
 }
@@ -3406,7 +3406,7 @@ resource "aws_emr_cluster" "tf-test-cluster" {
   core_instance_type   = "c4.large"
   core_instance_count  = 1
 
-  tags {
+  tags = {
     role     = "rolename"
     dns_zone = "env_zone"
     env      = "env"
@@ -3465,7 +3465,7 @@ resource "aws_security_group" "allow_all" {
     ignore_changes = ["ingress", "egress"]
   }
 
-  tags {
+  tags = {
     Name = "emr_test"
   }
 }
@@ -3474,7 +3474,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "168.31.0.0/16"
   enable_dns_hostnames = true
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster-termination-policy"
   }
 }
@@ -3483,7 +3483,7 @@ resource "aws_subnet" "main" {
   vpc_id     = "${aws_vpc.main.id}"
   cidr_block = "168.31.0.0/20"
 
-  tags {
+  tags = {
     Name = "tf-acc-emr-cluster-termination-policy"
   }
 }
@@ -3723,7 +3723,7 @@ resource "aws_emr_cluster" "tf-test-cluster" {
   core_instance_type   = "c4.large"
   core_instance_count  = 1
 
-  tags {
+  tags = {
     role     = "rolename"
     dns_zone = "env_zone"
     env      = "env"
@@ -3772,7 +3772,7 @@ resource "aws_security_group" "allow_all" {
     ignore_changes = ["ingress", "egress"]
   }
 
-  tags {
+  tags = {
     Name = "emr_test"
   }
 }
@@ -3781,7 +3781,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "168.31.0.0/16"
   enable_dns_hostnames = true
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster-visible-to-all-users"
   }
 }
@@ -3790,7 +3790,7 @@ resource "aws_subnet" "main" {
   vpc_id     = "${aws_vpc.main.id}"
   cidr_block = "168.31.0.0/20"
 
-  tags {
+  tags = {
     Name = "tf-acc-emr-cluster-visible-to-all-users"
   }
 }
@@ -4027,7 +4027,7 @@ resource "aws_emr_cluster" "tf-test-cluster" {
   core_instance_type   = "c4.large"
   core_instance_count  = 1
 
-  tags {
+  tags = {
     dns_zone = "new_zone"
     Env      = "production"
     name     = "name-env"
@@ -4075,7 +4075,7 @@ resource "aws_security_group" "allow_all" {
     ignore_changes = ["ingress", "egress"]
   }
 
-  tags {
+  tags = {
     Name = "emr_test"
   }
 }
@@ -4084,7 +4084,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "168.31.0.0/16"
   enable_dns_hostnames = true
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster-updated-tags"
   }
 }
@@ -4093,7 +4093,7 @@ resource "aws_subnet" "main" {
   vpc_id     = "${aws_vpc.main.id}"
   cidr_block = "168.31.0.0/20"
 
-  tags {
+  tags = {
     Name = "tf-acc-emr-cluster-updated-tags"
   }
 }
@@ -4333,7 +4333,7 @@ resource "aws_emr_cluster" "tf-test-cluster" {
   core_instance_type   = "c4.large"
   core_instance_count  = 1
 
-  tags {
+  tags = {
     role     = "rolename"
     dns_zone = "env_zone"
     env      = "env"
@@ -4383,7 +4383,7 @@ resource "aws_security_group" "allow_all" {
     ignore_changes = ["ingress", "egress"]
   }
 
-  tags {
+  tags = {
     Name = "emr_test"
   }
 }
@@ -4392,7 +4392,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "168.31.0.0/16"
   enable_dns_hostnames = true
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster-updated-root-volume-size"
   }
 }
@@ -4401,7 +4401,7 @@ resource "aws_subnet" "main" {
   vpc_id     = "${aws_vpc.main.id}"
   cidr_block = "168.31.0.0/20"
 
-  tags {
+  tags = {
     Name = "tf-acc-emr-cluster-updated-root-volume-size"
   }
 }
@@ -4628,7 +4628,7 @@ resource "aws_s3_bucket" "test" {
 
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/24"
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster-s3-logging"
   }
 }
@@ -4636,7 +4636,7 @@ resource "aws_vpc" "test" {
 resource "aws_subnet" "test" {
   vpc_id = "${aws_vpc.test.id}"
   cidr_block = "10.0.0.0/24"
-  tags {
+  tags = {
     Name = "tf-acc-emr-cluster-s3-logging"
   }
 }
@@ -4727,7 +4727,7 @@ resource "aws_emr_cluster" "tf-test-cluster" {
   core_instance_type   = "c4.large"
   core_instance_count  = 1
 
-  tags {
+  tags = {
     role     = "rolename"
     dns_zone = "env_zone"
     env      = "env"
@@ -4778,7 +4778,7 @@ resource "aws_security_group" "allow_all" {
     ignore_changes = ["ingress", "egress"]
   }
 
-  tags {
+  tags = {
     Name = "emr_test"
   }
 }
@@ -4787,7 +4787,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "168.31.0.0/16"
   enable_dns_hostnames = true
 
-  tags {
+  tags = {
     Name = "terraform-testacc-emr-cluster-custom-ami-id"
   }
 }
@@ -4796,7 +4796,7 @@ resource "aws_subnet" "main" {
   vpc_id     = "${aws_vpc.main.id}"
   cidr_block = "168.31.0.0/20"
 
-  tags {
+  tags = {
     Name = "tf-acc-emr-cluster-custom-ami-id"
   }
 }

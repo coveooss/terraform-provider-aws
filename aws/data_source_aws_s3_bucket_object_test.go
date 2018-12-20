@@ -343,7 +343,7 @@ CONTENT
 	content_encoding = "identity"
 	content_language = "en-GB"
 	remove_all_on_delete = true
-	tags {
+	tags = {
 		Key1 = "Value 1"
 	}
 }
