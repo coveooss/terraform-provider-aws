@@ -92,10 +92,8 @@ func testAccCheckCloudwatchLogSubscriptionFilterDisappears(rName string) resourc
 		params := &cloudwatchlogs.DeleteLogGroupInput{
 			LogGroupName: aws.String(fmt.Sprintf("example_lambda_name_%s", rName)),
 		}
-		if _, err := conn.DeleteLogGroup(params); err != nil {
-			return err
-		}
-		return nil
+		_, err := conn.DeleteLogGroup(params)
+		return err
 	}
 }
 
@@ -107,8 +105,8 @@ func testAccCheckCloudwatchLogSubscriptionFilterDestroy(s *terraform.State) erro
 			continue
 		}
 
-		logGroupName, _ := rs.Primary.Attributes["log_group_name"]
-		filterNamePrefix, _ := rs.Primary.Attributes["name"]
+		logGroupName := rs.Primary.Attributes["log_group_name"]
+		filterNamePrefix := rs.Primary.Attributes["name"]
 
 		input := cloudwatchlogs.DescribeSubscriptionFiltersInput{
 			LogGroupName:     aws.String(logGroupName),
@@ -140,8 +138,8 @@ func testAccCheckAwsCloudwatchLogSubscriptionFilterExists(n string, filter *clou
 
 		conn := testAccProvider.Meta().(*AWSClient).cloudwatchlogsconn
 
-		logGroupName, _ := rs.Primary.Attributes["log_group_name"]
-		filterNamePrefix, _ := rs.Primary.Attributes["name"]
+		logGroupName := rs.Primary.Attributes["log_group_name"]
+		filterNamePrefix := rs.Primary.Attributes["name"]
 
 		input := cloudwatchlogs.DescribeSubscriptionFiltersInput{
 			LogGroupName:     aws.String(logGroupName),
@@ -187,7 +185,7 @@ resource "aws_lambda_function" "test_lambdafunction" {
   filename      = "test-fixtures/lambdatest.zip"
   function_name = "example_lambda_name_%s"
   role          = "${aws_iam_role.iam_for_lambda.arn}"
-  runtime       = "nodejs4.3"
+  runtime       = "nodejs8.10"
   handler       = "exports.handler"
 }
 
