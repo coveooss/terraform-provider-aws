@@ -1,4 +1,4 @@
-dist: trusty
+dist: xenial
 sudo: required
 services:
   - docker
@@ -37,7 +37,7 @@ script:
 matrix:
   fast_finish: true
   allow_failures:
-  - go: tip
+    - go: tip
 
 after_success:
 - if [ ${TRAVIS_TAG::1} = v ];
