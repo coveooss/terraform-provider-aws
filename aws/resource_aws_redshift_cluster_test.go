@@ -95,29 +95,6 @@ func TestValidateRedshiftClusterDbName(t *testing.T) {
 	}
 }
 
-func TestAccAWSRedshiftCluster_importBasic(t *testing.T) {
-	resourceName := "aws_redshift_cluster.default"
-	config := testAccAWSRedshiftClusterConfig_basic(acctest.RandInt())
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSRedshiftClusterDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: config,
-			},
-
-			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"master_password", "skip_final_snapshot"},
-			},
-		},
-	})
-}
-
 func TestAccAWSRedshiftCluster_basic(t *testing.T) {
 	var v redshift.Cluster
 
@@ -140,6 +117,16 @@ func TestAccAWSRedshiftCluster_basic(t *testing.T) {
 					resource.TestMatchResourceAttr("aws_redshift_cluster.default", "dns_name", regexp.MustCompile(fmt.Sprintf("^tf-redshift-cluster-%d.*\\.redshift\\..*", ri))),
 				),
 			},
+			{
+				ResourceName:      "aws_redshift_cluster.default",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"final_snapshot_identifier",
+					"master_password",
+					"skip_final_snapshot",
+				},
+			},
 		},
 	})
 }
@@ -159,6 +146,16 @@ func TestAccAWSRedshiftCluster_withFinalSnapshot(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSRedshiftClusterExists("aws_redshift_cluster.default", &v),
 				),
+			},
+			{
+				ResourceName:      "aws_redshift_cluster.default",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"final_snapshot_identifier",
+					"master_password",
+					"skip_final_snapshot",
+				},
 			},
 		},
 	})
@@ -187,6 +184,16 @@ func TestAccAWSRedshiftCluster_kmsKey(t *testing.T) {
 					resource.TestMatchResourceAttr("aws_redshift_cluster.default", "kms_key_id", keyRegex),
 				),
 			},
+			{
+				ResourceName:      "aws_redshift_cluster.default",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"final_snapshot_identifier",
+					"master_password",
+					"skip_final_snapshot",
+				},
+			},
 		},
 	})
 }
@@ -212,43 +219,21 @@ func TestAccAWSRedshiftCluster_enhancedVpcRoutingEnabled(t *testing.T) {
 				),
 			},
 			{
+				ResourceName:      "aws_redshift_cluster.default",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"final_snapshot_identifier",
+					"master_password",
+					"skip_final_snapshot",
+				},
+			},
+			{
 				Config: postConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSRedshiftClusterExists("aws_redshift_cluster.default", &v),
 					resource.TestCheckResourceAttr(
 						"aws_redshift_cluster.default", "enhanced_vpc_routing", "false"),
-				),
-			},
-		},
-	})
-}
-
-func TestAccAWSRedshiftCluster_loggingEnabledDeprecated(t *testing.T) {
-	var v redshift.Cluster
-	rInt := acctest.RandInt()
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSRedshiftClusterDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSRedshiftClusterConfig_loggingEnabledDeprecated(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAWSRedshiftClusterExists("aws_redshift_cluster.default", &v),
-					resource.TestCheckResourceAttr(
-						"aws_redshift_cluster.default", "enable_logging", "true"),
-					resource.TestCheckResourceAttr(
-						"aws_redshift_cluster.default", "bucket_name", fmt.Sprintf("tf-redshift-logging-%d", rInt)),
-				),
-			},
-
-			{
-				Config: testAccAWSRedshiftClusterConfig_loggingDisabledDeprecated(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAWSRedshiftClusterExists("aws_redshift_cluster.default", &v),
-					resource.TestCheckResourceAttr(
-						"aws_redshift_cluster.default", "enable_logging", "false"),
 				),
 			},
 		},
@@ -274,7 +259,16 @@ func TestAccAWSRedshiftCluster_loggingEnabled(t *testing.T) {
 						"aws_redshift_cluster.default", "logging.0.bucket_name", fmt.Sprintf("tf-redshift-logging-%d", rInt)),
 				),
 			},
-
+			{
+				ResourceName:      "aws_redshift_cluster.default",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"final_snapshot_identifier",
+					"master_password",
+					"skip_final_snapshot",
+				},
+			},
 			{
 				Config: testAccAWSRedshiftClusterConfig_loggingDisabled(rInt),
 				Check: resource.ComposeTestCheckFunc(
@@ -954,6 +948,10 @@ resource "aws_redshift_cluster" "default" {
   automated_snapshot_retention_period = 0
   allow_version_upgrade = false
   skip_final_snapshot = true
+
+  timeouts {
+	create = "30m"
+  }
 }`, rInt)
 }
 
@@ -979,7 +977,7 @@ resource "aws_kms_key" "foo" {
 	}
 	POLICY
 	}
-	  
+
 resource "aws_redshift_cluster" "default" {
   cluster_identifier = "tf-redshift-cluster-%d"
   availability_zone = "us-west-2a"
@@ -1019,7 +1017,7 @@ resource "aws_kms_key" "foo" {
 	}
 	POLICY
 	}
-	  
+
 resource "aws_redshift_cluster" "default" {
   cluster_identifier = "tf-redshift-cluster-%d"
   availability_zone = "us-west-2a"
@@ -1119,72 +1117,6 @@ resource "aws_redshift_cluster" "default" {
   skip_final_snapshot = true
 }
 `, rInt)
-}
-
-func testAccAWSRedshiftClusterConfig_loggingDisabledDeprecated(rInt int) string {
-	return fmt.Sprintf(`
-	resource "aws_redshift_cluster" "default" {
-		cluster_identifier = "tf-redshift-cluster-%d"
-		availability_zone = "us-west-2a"
-		database_name = "mydb"
-		master_username = "foo_test"
-		master_password = "Mustbe8characters"
-		node_type = "dc1.large"
-		automated_snapshot_retention_period = 0
-		allow_version_upgrade = false
-		enable_logging = false
-		skip_final_snapshot = true
-	}`, rInt)
-}
-
-func testAccAWSRedshiftClusterConfig_loggingEnabledDeprecated(rInt int) string {
-	return fmt.Sprintf(`
-data "aws_redshift_service_account" "main" {}
-
- resource "aws_s3_bucket" "bucket" {
-	 bucket = "tf-redshift-logging-%d"
-	 force_destroy = true
-	 policy = <<EOF
-{
- "Version": "2008-10-17",
- "Statement": [
-	 {
-		 "Sid": "Stmt1376526643067",
-		 "Effect": "Allow",
-		 "Principal": {
-			 "AWS": "${data.aws_redshift_service_account.main.arn}"
-		 },
-		 "Action": "s3:PutObject",
-		 "Resource": "arn:aws:s3:::tf-redshift-logging-%d/*"
-	 },
-	 {
-		 "Sid": "Stmt137652664067",
-		 "Effect": "Allow",
-		 "Principal": {
-			 "AWS": "${data.aws_redshift_service_account.main.arn}"
-		 },
-		 "Action": "s3:GetBucketAcl",
-		 "Resource": "arn:aws:s3:::tf-redshift-logging-%d"
-	 }
- ]
-}
-EOF
- }
-
-
- resource "aws_redshift_cluster" "default" {
-	 cluster_identifier = "tf-redshift-cluster-%d"
-	 availability_zone = "us-west-2a"
-	 database_name = "mydb"
-	 master_username = "foo_test"
-	 master_password = "Mustbe8characters"
-	 node_type = "dc1.large"
-	 automated_snapshot_retention_period = 0
-	 allow_version_upgrade = false
-	 enable_logging = true
-	 bucket_name = "${aws_s3_bucket.bucket.bucket}"
-	 skip_final_snapshot = true
- }`, rInt, rInt, rInt, rInt)
 }
 
 func testAccAWSRedshiftClusterConfig_loggingDisabled(rInt int) string {
