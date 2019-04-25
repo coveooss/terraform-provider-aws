@@ -118,6 +118,7 @@ func resourceAwsS3BucketObject() *schema.Resource {
 					s3.ObjectStorageClassStandardIa,
 					s3.ObjectStorageClassOnezoneIa,
 					s3.ObjectStorageClassIntelligentTiering,
+					s3.ObjectStorageClassDeepArchive,
 				}, false),
 			},
 
