@@ -3,38 +3,15 @@ sudo: required
 services:
   - docker
 language: go
-go:
-- "1.12.x"
 go_import_path: github.com/terraform-providers/terraform-provider-aws
-env:
-  GOFLAGS=-mod=vendor
 
 git:
   depth: 1
 
-install:
-# This script is used by the Travis build to install a cookie for
-# go.googlesource.com so rate limits are higher when using `go get` to fetch
-# packages that live there.
-# See: https://github.com/golang/go/issues/12933
-- if [ ${TRAVIS_TAG::1} = v ];
-  then
-    bash scripts/gogetcookie.sh &&
-    go get github.com/kardianos/govendor;
-  fi
+env:
+  global:
+    GOFLAGS=-mod=vendor
 
-script:
-- if [ ${TRAVIS_TAG::1} = v ];
-  then
-    make tools && 
-    make lint && 
-    make test;
-  fi
-
-# branches:
-#   only:
-#   - master
-  
 matrix:
   fast_finish: true
   allow_failures:
@@ -51,6 +28,14 @@ matrix:
     script:
       - make website-test
       - make website-lint
+
+install:
+# This script is used by the Travis build to install a cookie for
+# go.googlesource.com so rate limits are higher when using `go get` to fetch
+# packages that live there.
+# See: https://github.com/golang/go/issues/12933
+- bash scripts/gogetcookie.sh
+- make tools
 
 after_success:
 - if [ ${TRAVIS_TAG::1} = v ];

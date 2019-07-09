@@ -221,10 +221,10 @@ func resourceAwsSsmParameterPut(d *schema.ResourceData, meta interface{}) error 
 	log.Printf("[DEBUG] Waiting for SSM Parameter %v to be updated", d.Get("name"))
 	_, err := ssmconn.PutParameter(paramInput)
 
-		if isAWSErr(err, "ValidationException", "Tier is not supported") {
-			paramInput.Tier = nil
-			_, err = ssmconn.PutParameter(paramInput)
-		}
+	if isAWSErr(err, "ValidationException", "Tier is not supported") {
+		paramInput.Tier = nil
+		_, err = ssmconn.PutParameter(paramInput)
+	}
 
 	if isAWSErr(err, ssm.ErrCodeParameterAlreadyExists, "") {
 		return fmt.Errorf("The parameter already exists")
