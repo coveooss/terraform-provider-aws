@@ -3,6 +3,7 @@ package aws
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -18,8 +19,15 @@ func resourceAwsRouteTableAssociation() *schema.Resource {
 		Read:   resourceAwsRouteTableAssociationRead,
 		Update: resourceAwsRouteTableAssociationUpdate,
 		Delete: resourceAwsRouteTableAssociationDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
+			"association_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"subnet_id": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -65,9 +73,8 @@ func resourceAwsRouteTableAssociationCreate(d *schema.ResourceData, meta interfa
 		return err
 	}
 
-	// Set the ID and return
-	d.SetId(*resp.AssociationId)
-	log.Printf("[INFO] Association ID: %s", d.Id())
+	d.Set("association_id", *resp.AssociationId)
+	d.SetId(fmt.Sprintf("%s:%s", d.Get("route_table_id").(string), d.Get("subnet_id").(string)))
 
 	return nil
 }
@@ -75,9 +82,22 @@ func resourceAwsRouteTableAssociationCreate(d *schema.ResourceData, meta interfa
 func resourceAwsRouteTableAssociationRead(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).ec2conn
 
+	// ID retrocompatibility. It used to be only the association id.
+	routeTableId, routeTableIdOk := d.GetOk("route_table_id")
+	subnetId, subnetIdOk := d.GetOk("subnet_id")
+	if routeTableIdOk && subnetIdOk && !strings.Contains(d.Id(), ":") {
+		d.SetId(fmt.Sprintf("%s:%s", routeTableId.(string), subnetId.(string)))
+	}
+
+	idParts := strings.Split(d.Id(), ":")
+	if len(idParts) != 2 {
+		return fmt.Errorf("expected ID in format routeTableId:subnetId, received: %s", d.Id())
+	}
+	d.Set("route_table_id", idParts[0])
+	d.Set("subnet_id", idParts[1])
+
 	// Get the routing table that this association belongs to
-	rtRaw, _, err := resourceAwsRouteTableStateRefreshFunc(
-		conn, d.Get("route_table_id").(string))()
+	rtRaw, _, err := resourceAwsRouteTableStateRefreshFunc(conn, d.Get("route_table_id").(string))()
 	if err != nil {
 		return err
 	}
@@ -89,9 +109,9 @@ func resourceAwsRouteTableAssociationRead(d *schema.ResourceData, meta interface
 	// Inspect that the association exists
 	found := false
 	for _, a := range rt.Associations {
-		if *a.RouteTableAssociationId == d.Id() {
+		if a.SubnetId != nil && *a.SubnetId == d.Get("subnet_id").(string) {
 			found = true
-			d.Set("subnet_id", *a.SubnetId)
+			d.Set("association_id", *a.RouteTableAssociationId)
 			break
 		}
 	}
@@ -113,7 +133,7 @@ func resourceAwsRouteTableAssociationUpdate(d *schema.ResourceData, meta interfa
 		d.Get("route_table_id").(string))
 
 	req := &ec2.ReplaceRouteTableAssociationInput{
-		AssociationId: aws.String(d.Id()),
+		AssociationId: aws.String(d.Get("association_id").(string)),
 		RouteTableId:  aws.String(d.Get("route_table_id").(string)),
 	}
 	resp, err := conn.ReplaceRouteTableAssociation(req)
@@ -128,9 +148,8 @@ func resourceAwsRouteTableAssociationUpdate(d *schema.ResourceData, meta interfa
 		return err
 	}
 
-	// Update the ID
-	d.SetId(*resp.NewAssociationId)
-	log.Printf("[INFO] Association ID: %s", d.Id())
+	d.Set("association_id", *resp.NewAssociationId)
+	d.SetId(fmt.Sprintf("%s:%s", d.Get("route_table_id").(string), d.Get("subnet_id").(string)))
 
 	return nil
 }
@@ -140,7 +159,7 @@ func resourceAwsRouteTableAssociationDelete(d *schema.ResourceData, meta interfa
 
 	log.Printf("[INFO] Deleting route table association: %s", d.Id())
 	_, err := conn.DisassociateRouteTable(&ec2.DisassociateRouteTableInput{
-		AssociationId: aws.String(d.Id()),
+		AssociationId: aws.String(d.Get("association_id").(string)),
 	})
 	if err != nil {
 		ec2err, ok := err.(awserr.Error)
