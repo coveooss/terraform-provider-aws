@@ -1412,7 +1412,7 @@ func (c *DataSync) ListAgentsWithContext(ctx aws.Context, input *ListAgentsInput
 //    // Example iterating over at most 3 pages of a ListAgents operation.
 //    pageNum := 0
 //    err := client.ListAgentsPages(params,
-//        func(page *ListAgentsOutput, lastPage bool) bool {
+//        func(page *datasync.ListAgentsOutput, lastPage bool) bool {
 //            pageNum++
 //            fmt.Println(page)
 //            return pageNum <= 3
@@ -1555,7 +1555,7 @@ func (c *DataSync) ListLocationsWithContext(ctx aws.Context, input *ListLocation
 //    // Example iterating over at most 3 pages of a ListLocations operation.
 //    pageNum := 0
 //    err := client.ListLocationsPages(params,
-//        func(page *ListLocationsOutput, lastPage bool) bool {
+//        func(page *datasync.ListLocationsOutput, lastPage bool) bool {
 //            pageNum++
 //            fmt.Println(page)
 //            return pageNum <= 3
@@ -1693,7 +1693,7 @@ func (c *DataSync) ListTagsForResourceWithContext(ctx aws.Context, input *ListTa
 //    // Example iterating over at most 3 pages of a ListTagsForResource operation.
 //    pageNum := 0
 //    err := client.ListTagsForResourcePages(params,
-//        func(page *ListTagsForResourceOutput, lastPage bool) bool {
+//        func(page *datasync.ListTagsForResourceOutput, lastPage bool) bool {
 //            pageNum++
 //            fmt.Println(page)
 //            return pageNum <= 3
@@ -1831,7 +1831,7 @@ func (c *DataSync) ListTaskExecutionsWithContext(ctx aws.Context, input *ListTas
 //    // Example iterating over at most 3 pages of a ListTaskExecutions operation.
 //    pageNum := 0
 //    err := client.ListTaskExecutionsPages(params,
-//        func(page *ListTaskExecutionsOutput, lastPage bool) bool {
+//        func(page *datasync.ListTaskExecutionsOutput, lastPage bool) bool {
 //            pageNum++
 //            fmt.Println(page)
 //            return pageNum <= 3
@@ -1969,7 +1969,7 @@ func (c *DataSync) ListTasksWithContext(ctx aws.Context, input *ListTasksInput, 
 //    // Example iterating over at most 3 pages of a ListTasks operation.
 //    pageNum := 0
 //    err := client.ListTasksPages(params,
-//        func(page *ListTasksOutput, lastPage bool) bool {
+//        func(page *datasync.ListTasksOutput, lastPage bool) bool {
 //            pageNum++
 //            fmt.Println(page)
 //            return pageNum <= 3
@@ -2650,7 +2650,7 @@ type CreateLocationEfsInput struct {
 	// security group S (which you provide for DataSync to use at this stage) is
 	// as follows:
 	//
-	//    *  Security group M (which you associate with the mount target) must allow
+	//    * Security group M (which you associate with the mount target) must allow
 	//    inbound access for the Transmission Control Protocol (TCP) on the NFS
 	//    port (2049) from security group S. You can enable inbound connections
 	//    either by IP address (CIDR range) or security group.
@@ -2658,9 +2658,8 @@ type CreateLocationEfsInput struct {
 	//    * Security group S (provided to DataSync to access EFS) should have a
 	//    rule that enables outbound connections to the NFS port on one of the file
 	//    system’s mount targets. You can enable outbound connections either by
-	//    IP address (CIDR range) or security group.
-	//
-	// For information about security groups and mount targets, see "https://docs.aws.amazon.com/efs/latest/ug/security-considerations.html#network-access"
+	//    IP address (CIDR range) or security group. For information about security
+	//    groups and mount targets, see "https://docs.aws.amazon.com/efs/latest/ug/security-considerations.html#network-access"
 	//    (Security Groups for Amazon EC2 Instances and Mount Targets) in the Amazon
 	//    EFS User Guide.
 	//
@@ -3409,11 +3408,15 @@ type DescribeAgentOutput struct {
 	// The time that the agent was activated (that is, created in your account).
 	CreationTime *time.Time `type:"timestamp"`
 
+	EndpointOptions *EndpointOptions `type:"structure"`
+
 	// The time that the agent last connected to DataSyc.
 	LastConnectionTime *time.Time `type:"timestamp"`
 
 	// The name of the agent.
 	Name *string `min:"1" type:"string"`
+
+	PrivateLinkConfig *PrivateLinkConfig `type:"structure"`
 
 	// The status of the agent. If the status is ONLINE, then the agent is configured
 	// properly and is available to use. The Running status is the normal running
@@ -3445,6 +3448,12 @@ func (s *DescribeAgentOutput) SetCreationTime(v time.Time) *DescribeAgentOutput 
 	return s
 }
 
+// SetEndpointOptions sets the EndpointOptions field's value.
+func (s *DescribeAgentOutput) SetEndpointOptions(v *EndpointOptions) *DescribeAgentOutput {
+	s.EndpointOptions = v
+	return s
+}
+
 // SetLastConnectionTime sets the LastConnectionTime field's value.
 func (s *DescribeAgentOutput) SetLastConnectionTime(v time.Time) *DescribeAgentOutput {
 	s.LastConnectionTime = &v
@@ -3454,6 +3463,12 @@ func (s *DescribeAgentOutput) SetLastConnectionTime(v time.Time) *DescribeAgentO
 // SetName sets the Name field's value.
 func (s *DescribeAgentOutput) SetName(v string) *DescribeAgentOutput {
 	s.Name = &v
+	return s
+}
+
+// SetPrivateLinkConfig sets the PrivateLinkConfig field's value.
+func (s *DescribeAgentOutput) SetPrivateLinkConfig(v *PrivateLinkConfig) *DescribeAgentOutput {
+	s.PrivateLinkConfig = v
 	return s
 }
 
@@ -4014,8 +4029,8 @@ type DescribeTaskOutput struct {
 	ErrorDetail *string `type:"string"`
 
 	// Specifies that the task excludes files in the transfer based on the specified
-	// pattern in the filter. Transfers all files in the task’s subdirectory, except
-	// files that match the filter that is set.
+	// pattern in the filter. Transfers all files in the task’s subdirectory,
+	// except files that match the filter that is set.
 	Excludes []*FilterRule `type:"list"`
 
 	// The name of the task that was described.
@@ -4183,6 +4198,36 @@ func (s *Ec2Config) SetSecurityGroupArns(v []*string) *Ec2Config {
 // SetSubnetArn sets the SubnetArn field's value.
 func (s *Ec2Config) SetSubnetArn(v string) *Ec2Config {
 	s.SubnetArn = &v
+	return s
+}
+
+type EndpointOptions struct {
+	_ struct{} `type:"structure"`
+
+	Fips *bool `type:"boolean"`
+
+	PrivateLink *bool `type:"boolean"`
+}
+
+// String returns the string representation
+func (s EndpointOptions) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s EndpointOptions) GoString() string {
+	return s.String()
+}
+
+// SetFips sets the Fips field's value.
+func (s *EndpointOptions) SetFips(v bool) *EndpointOptions {
+	s.Fips = &v
+	return s
+}
+
+// SetPrivateLink sets the PrivateLink field's value.
+func (s *EndpointOptions) SetPrivateLink(v bool) *EndpointOptions {
+	s.PrivateLink = &v
 	return s
 }
 
@@ -4906,6 +4951,44 @@ func (s *Options) SetUid(v string) *Options {
 // SetVerifyMode sets the VerifyMode field's value.
 func (s *Options) SetVerifyMode(v string) *Options {
 	s.VerifyMode = &v
+	return s
+}
+
+type PrivateLinkConfig struct {
+	_ struct{} `type:"structure"`
+
+	PrivateLinkEndpoint *string `type:"string"`
+
+	SecurityGroupArns []*string `min:"1" type:"list"`
+
+	SubnetArns []*string `min:"1" type:"list"`
+}
+
+// String returns the string representation
+func (s PrivateLinkConfig) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s PrivateLinkConfig) GoString() string {
+	return s.String()
+}
+
+// SetPrivateLinkEndpoint sets the PrivateLinkEndpoint field's value.
+func (s *PrivateLinkConfig) SetPrivateLinkEndpoint(v string) *PrivateLinkConfig {
+	s.PrivateLinkEndpoint = &v
+	return s
+}
+
+// SetSecurityGroupArns sets the SecurityGroupArns field's value.
+func (s *PrivateLinkConfig) SetSecurityGroupArns(v []*string) *PrivateLinkConfig {
+	s.SecurityGroupArns = v
+	return s
+}
+
+// SetSubnetArns sets the SubnetArns field's value.
+func (s *PrivateLinkConfig) SetSubnetArns(v []*string) *PrivateLinkConfig {
+	s.SubnetArns = v
 	return s
 }
 

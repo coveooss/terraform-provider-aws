@@ -77,6 +77,10 @@ func resourceAwsSsmParameter() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"version": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
 			"tags": tagsSchema(),
 		},
 
@@ -123,6 +127,7 @@ func resourceAwsSsmParameterRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("name", param.Name)
 	d.Set("type", param.Type)
 	d.Set("value", param.Value)
+	d.Set("version", param.Version)
 
 	describeParamsInput := &ssm.DescribeParametersInput{
 		ParameterFilters: []*ssm.ParameterStringFilter{

@@ -879,8 +879,11 @@ func resourceAwsEMRClusterCreate(d *schema.ResourceData, meta interface{}) error
 		}
 		return nil
 	})
+	if isResourceTimeoutError(err) {
+		resp, err = conn.RunJobFlow(params)
+	}
 	if err != nil {
-		return err
+		return fmt.Errorf("error running EMR Job Flow: %s", err)
 	}
 
 	d.SetId(*resp.JobFlowId)
@@ -1318,46 +1321,70 @@ func resourceAwsEMRClusterDelete(d *schema.ResourceData, meta interface{}) error
 		return err
 	}
 
+	input := &emr.ListInstancesInput{
+		ClusterId: aws.String(d.Id()),
+	}
+	var resp *emr.ListInstancesOutput
+	var count int
 	err = resource.Retry(20*time.Minute, func() *resource.RetryError {
-		resp, err := conn.ListInstances(&emr.ListInstancesInput{
-			ClusterId: aws.String(d.Id()),
-		})
+		var err error
+		resp, err = conn.ListInstances(input)
 
 		if err != nil {
 			return resource.NonRetryableError(err)
 		}
 
-		instanceCount := len(resp.Instances)
-
-		if resp == nil || instanceCount == 0 {
-			log.Printf("[DEBUG] No instances found for EMR Cluster (%s)", d.Id())
-			return nil
+		count = countEMRRemainingInstances(resp, d.Id())
+		if count != 0 {
+			return resource.RetryableError(fmt.Errorf("EMR Cluster (%s) has (%d) Instances remaining", d.Id(), count))
 		}
-
-		// Collect instance status states, wait for all instances to be terminated
-		// before moving on
-		var terminated []string
-		for j, i := range resp.Instances {
-			if i.Status != nil {
-				if aws.StringValue(i.Status.State) == emr.InstanceStateTerminated {
-					terminated = append(terminated, *i.Ec2InstanceId)
-				}
-			} else {
-				log.Printf("[DEBUG] Cluster instance (%d : %s) has no status", j, *i.Ec2InstanceId)
-			}
-		}
-		if len(terminated) == instanceCount {
-			log.Printf("[DEBUG] All (%d) EMR Cluster (%s) Instances terminated", instanceCount, d.Id())
-			return nil
-		}
-		return resource.RetryableError(fmt.Errorf("EMR Cluster (%s) has (%d) Instances remaining, retrying", d.Id(), len(resp.Instances)))
+		return nil
 	})
 
+	if isResourceTimeoutError(err) {
+		resp, err = conn.ListInstances(input)
+
+		if err == nil {
+			count = countEMRRemainingInstances(resp, d.Id())
+		}
+	}
+
+	if count != 0 {
+		return fmt.Errorf("EMR Cluster (%s) has (%d) Instances remaining", d.Id(), count)
+	}
+
 	if err != nil {
-		return fmt.Errorf("error waiting for EMR Cluster (%s) Instances to drain", d.Id())
+		return fmt.Errorf("error waiting for EMR Cluster (%s) Instances to drain: %s", d.Id(), err)
 	}
 
 	return nil
+}
+
+func countEMRRemainingInstances(resp *emr.ListInstancesOutput, emrClusterId string) int {
+	instanceCount := len(resp.Instances)
+
+	if resp == nil || instanceCount == 0 {
+		log.Printf("[DEBUG] No instances found for EMR Cluster (%s)", emrClusterId)
+		return 0
+	}
+
+	// Collect instance status states, wait for all instances to be terminated
+	// before moving on
+	var terminated []string
+	for j, i := range resp.Instances {
+		if i.Status != nil {
+			if aws.StringValue(i.Status.State) == emr.InstanceStateTerminated {
+				terminated = append(terminated, *i.Ec2InstanceId)
+			}
+		} else {
+			log.Printf("[DEBUG] Cluster instance (%d : %s) has no status", j, *i.Ec2InstanceId)
+		}
+	}
+	if len(terminated) == instanceCount {
+		log.Printf("[DEBUG] All (%d) EMR Cluster (%s) Instances terminated", instanceCount, emrClusterId)
+		return 0
+	}
+	return len(resp.Instances)
 }
 
 func expandApplications(apps []interface{}) []*emr.Application {
@@ -1525,6 +1552,7 @@ func flattenEmrKerberosAttributes(d *schema.ResourceData, kerberosAttributes *em
 
 	// Do not set from API:
 	// * ad_domain_join_password
+	// * ad_domain_join_user
 	// * cross_realm_trust_principal_password
 	// * kdc_admin_password
 
@@ -1537,8 +1565,8 @@ func flattenEmrKerberosAttributes(d *schema.ResourceData, kerberosAttributes *em
 		m["ad_domain_join_password"] = v.(string)
 	}
 
-	if kerberosAttributes.ADDomainJoinUser != nil {
-		m["ad_domain_join_user"] = *kerberosAttributes.ADDomainJoinUser
+	if v, ok := d.GetOk("kerberos_attributes.0.ad_domain_join_user"); ok {
+		m["ad_domain_join_user"] = v.(string)
 	}
 
 	if v, ok := d.GetOk("kerberos_attributes.0.cross_realm_trust_principal_password"); ok {

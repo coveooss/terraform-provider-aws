@@ -50,12 +50,14 @@ resource "aws_eks_cluster" "example" {
 
   enabled_cluster_log_types = ["api", "audit"]
   name                      = "${var.cluster_name}"
+
   # ... other configuration ...
 }
 
 resource "aws_cloudwatch_log_group" "example" {
-  name             = "/aws/eks/${var.cluster_name}/cluster"
+  name              = "/aws/eks/${var.cluster_name}/cluster"
   retention_in_days = 7
+
   # ... potentially other configuration ...
 }
 ```
@@ -96,7 +98,7 @@ In addition to all arguments above, the following attributes are exported:
 `aws_eks_cluster` provides the following
 [Timeouts](/docs/configuration/resources.html#timeouts) configuration options:
 
-* `create` - (Default `15 minutes`) How long to wait for the EKS Cluster to be created.
+* `create` - (Default `30 minutes`) How long to wait for the EKS Cluster to be created.
 * `update` - (Default `60 minutes`) How long to wait for the EKS Cluster to be updated.
 Note that the `update` timeout is used separately for both `version` and `vpc_config` update timeouts.
 * `delete` - (Default `15 minutes`) How long to wait for the EKS Cluster to be deleted.
