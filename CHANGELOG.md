@@ -1,3 +1,85 @@
+
+## 2.20.0 (July 19, 2019)
+
+NOTES:
+
+* resource/aws_ssm_maintenance_window_task: The `logging_info` and `task_parameters` configuration blocks have been deprecated in favor of a new `task_invocation_parameters` configuration block to match the API ([#7823](https://github.com/terraform-providers/terraform-provider-aws/issues/7823))
+
+FEATURES:
+* **New Data Source** `aws_waf_rule` ([#9318](https://github.com/terraform-providers/terraform-provider-aws/issues/9318))
+* **New Data Source:** `aws_waf_web_acl` ([#9320](https://github.com/terraform-providers/terraform-provider-aws/issues/9320))
+* **New Data Source** `aws_wafregional_rule` ([#9319](https://github.com/terraform-providers/terraform-provider-aws/issues/9319))
+* **New Data Source:** `aws_wafregional_web_acl` ([#9321](https://github.com/terraform-providers/terraform-provider-aws/issues/9321))
+* **New Resource:** `aws_quicksight_group` ([#8233](https://github.com/terraform-providers/terraform-provider-aws/issues/8233))
+* **New Resource:** `aws_servicequotas_service_quota` ([#9192](https://github.com/terraform-providers/terraform-provider-aws/issues/9192))
+
+ENHANCEMENTS:
+
+* data-source/aws_route53_zone: Add `linked_service_principal` and `linked_service_description` attributes ([#9390](https://github.com/terraform-providers/terraform-provider-aws/issues/9390))
+* provider: Support for assuming role using credential process from the shared AWS configuration file ([#9305](https://github.com/terraform-providers/terraform-provider-aws/issues/9305))
+* resource/aws_api_gateway_domain_name: Add `security_policy` argument ([#9128](https://github.com/terraform-providers/terraform-provider-aws/issues/9128))
+* resource/aws_athena_named_query: Add `workgroup` argument ([#9383](https://github.com/terraform-providers/terraform-provider-aws/issues/9383))
+* resource/aws_autoscaling_lifecycle_hook: Support resource import ([#9336](https://github.com/terraform-providers/terraform-provider-aws/issues/9336))
+* resource/aws_elasticsearch_domain: Add `cluster_config` configuration block `zone_awareness_config` configuration block (support three Availability Zone awareness) ([#9398](https://github.com/terraform-providers/terraform-provider-aws/issues/9398))
+* resource/aws_emr_cluster: Add `master_instance_group` configuration block `instance_count` argument (support multiple master nodes) ([#9235](https://github.com/terraform-providers/terraform-provider-aws/issues/9235))
+* resource/aws_media_store_container: Add `tags` argument ([#9379](https://github.com/terraform-providers/terraform-provider-aws/issues/9379))
+* resource/aws_rds_cluster: Support `scaling_configuration` configuration block `timeout_action` argument ([#9374](https://github.com/terraform-providers/terraform-provider-aws/issues/9374))
+* resource/aws_s3_bucket_object: Allow empty object ([#7544](https://github.com/terraform-providers/terraform-provider-aws/issues/7544))
+* resource/aws_ssm_maintenance_window_task: Support resource import and in-place updates ([#7823](https://github.com/terraform-providers/terraform-provider-aws/issues/7823))
+* resource/aws_ssm_maintenance_window_task: Add `task_invocation_parameters` configuration block and deprecate `logging_info` and `task_parameters` configuration blockss to match API ([#7823](https://github.com/terraform-providers/terraform-provider-aws/issues/7823))
+
+BUG FIXES:
+
+* resource/aws_appautoscaling_policy: Properly support importing of dynamodb policies [[#8397](https://github.com/terraform-providers/terraform-provider-aws/issues/8397)] 
+* resource/aws_cloudwatch_event_permissions: Clean up error handling when reading event permissions ([#9065](https://github.com/terraform-providers/terraform-provider-aws/issues/9065))
+* resource/aws_cloudwatch_event_rule: Retry error handling when creating and updating event rules ([#9065](https://github.com/terraform-providers/terraform-provider-aws/issues/9065))
+* resource/aws_cloudwatch_log_destination: Clean up error handling when putting log destination ([#9065](https://github.com/terraform-providers/terraform-provider-aws/issues/9065))
+* resource/aws_cloudwatch_log_subscription_filter: Clean up error handling when creating log subscription filter ([#9065](https://github.com/terraform-providers/terraform-provider-aws/issues/9065))
+* resource/aws_cognito_identity_provider: Properly pass all attributes during update ([#9396](https://github.com/terraform-providers/terraform-provider-aws/issues/9396))
+* resource/aws_db_event_subscription: Handle `SubscriptionNotFound` errors during refresh and deletion ([#9371](https://github.com/terraform-providers/terraform-provider-aws/issues/9371))
+* resource/aws_s3_account_public_access_block: Retry after timeout when reading s3 account public access block ([#9387](https://github.com/terraform-providers/terraform-provider-aws/issues/9387))
+* resource/aws_ssm_maintenance_window_task: Bypass `DoesNotExistException` error on deletion ([#7823](https://github.com/terraform-providers/terraform-provider-aws/issues/7823))
+* resource/aws_ssm_maintenance_window_task: Prevent `task_parameters` ordering differences ([#9364](https://github.com/terraform-providers/terraform-provider-aws/issues/9364))
+
+## 2.19.0 (July 11, 2019)
+
+FEATURES:
+
+* **New Data Source:** `aws_msk_configuration` ([#9088](https://github.com/terraform-providers/terraform-provider-aws/issues/9088))
+* **New Resource:** `aws_athena_workgroup` ([#9290](https://github.com/terraform-providers/terraform-provider-aws/issues/9290))
+* **New Resource:** `aws_datapipeline_pipeline` ([#9267](https://github.com/terraform-providers/terraform-provider-aws/issues/9267))
+* **New Resource:** `aws_directory_service_log_subscription` ([#9261](https://github.com/terraform-providers/terraform-provider-aws/issues/9261))
+
+ENHANCEMENTS:
+
+* resource/aws_acmpca_certificate_authority: Support validation for `ROOT` certificate authority type ([#9292](https://github.com/terraform-providers/terraform-provider-aws/issues/9292))
+* resource/aws_appmesh_virtual_node: Add `aws_cloud_map` configuration block under `spec` and `service_discovery` ([#9271](https://github.com/terraform-providers/terraform-provider-aws/issues/9271))
+* resource/aws_appmesh_virtual_router: Add `tags` argument ([#9249](https://github.com/terraform-providers/terraform-provider-aws/issues/9249))
+* resource/aws_appmesh_virtual_service: Add `tags` argument ([#9252](https://github.com/terraform-providers/terraform-provider-aws/issues/9252))
+* resource/aws_codebuild_project: Add `environment` configuration block `registry_credential` configuration block (support Secrets Manager registry credentials) ([#9168](https://github.com/terraform-providers/terraform-provider-aws/issues/9168))
+* resource/aws_codebuild_project: Add `logs_config` configuration block (support CloudWatch and S3 logging configuration) ([#7534](https://github.com/terraform-providers/terraform-provider-aws/issues/7534))
+* resource/aws_ebs_snapshot: Support customizable create/delete timeouts and increase defaults to 10 minutes ([#9157](https://github.com/terraform-providers/terraform-provider-aws/issues/9157))
+* resource/aws_lightsail_instance: Add validation for `name` argument ([#8667](https://github.com/terraform-providers/terraform-provider-aws/issues/8667))
+* resource/aws_lightsail_instance: Add `tags` argument ([#9273](https://github.com/terraform-providers/terraform-provider-aws/issues/9273))
+* resource/aws_organizations_account: Add `tags` argument ([#9202](https://github.com/terraform-providers/terraform-provider-aws/issues/9202))
+* resource/aws_service_discovery_service: Add `namespace_id` argument (Support HTTP namespaces) ([#7341](https://github.com/terraform-providers/terraform-provider-aws/issues/7341))
+* resource/aws_ssm_document: Support resource import ([#9313](https://github.com/terraform-providers/terraform-provider-aws/issues/9313))
+* resource/aws_waf_rule_group: Support resource import ([#9254](https://github.com/terraform-providers/terraform-provider-aws/issues/9254))
+* resource/aws_wafregional_byte_match_set: Support resource import ([#9258](https://github.com/terraform-providers/terraform-provider-aws/issues/9258))
+* resource/aws_wafregional_rule: Support resource import ([#9239](https://github.com/terraform-providers/terraform-provider-aws/issues/9239))
+* resource/aws_wafregional_rule_group: Support resource import ([#9240](https://github.com/terraform-providers/terraform-provider-aws/issues/9240))
+* resource/aws_wafregional_web_acl: Support resource import ([#9248](https://github.com/terraform-providers/terraform-provider-aws/issues/9248))
+
+BUG FIXES:
+
+* resource/aws_backup_selection: Retry creation for IAM eventual consistency error ([#9298](https://github.com/terraform-providers/terraform-provider-aws/issues/9298))
+* resource/aws_db_event_subscription: Prevent `Unable to find RDS Event Subscription` error during deletion and refresh ([#9274](https://github.com/terraform-providers/terraform-provider-aws/issues/9274))
+* resource/aws_iam_policy_attachment: Bypass `NoSuchEntity` error when detaching groups, roles, and users (support group, role (when `force_detach_policies` is enabled), and user renames (when `force_destroy` is enabled)) ([#9278](https://github.com/terraform-providers/terraform-provider-aws/issues/9278))
+* resource/aws_s3_bucket: Properly handle the creation of tags defined in `lifecycle_rule` when no prefix argument is specified ([#7162](https://github.com/terraform-providers/terraform-provider-aws/issues/7162))
+* resource/aws_ssm_document: Ensure `content` attribute is always refreshed ([#9313](https://github.com/terraform-providers/terraform-provider-aws/issues/9313))
+* resource/aws_transfer_user: Final retry after timeout waiting for deletion of transfer user ([#9241](https://github.com/terraform-providers/terraform-provider-aws/issues/9241))
+* service/organizations: Automatically retry API calls on `ConcurrentModificationException` error ([#9195](https://github.com/terraform-providers/terraform-provider-aws/issues/9195))
+
 ## 2.18.0 (July 05, 2019)
 
 FEATURES:
