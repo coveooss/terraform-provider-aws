@@ -2,13 +2,14 @@ package aws
 
 import (
 	"fmt"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/hashicorp/terraform/helper/acctest"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
 	"io/ioutil"
 	"path"
 	"testing"
+
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccDataSourceAWSS3DownloadBucketObject_basic(t *testing.T) {
