@@ -528,34 +528,41 @@ func TestAccAWSAcmCertificate_tags(t *testing.T) {
 func TestAccAWSAcmCertificate_imported_DomainName(t *testing.T) {
 	resourceName := "aws_acm_certificate.test"
 
+	commonName := "example.com"
+	caKey := tlsRsaPrivateKeyPem(2048)
+	caCertificate := tlsRsaX509SelfSignedCaCertificatePem(caKey)
+	key := tlsRsaPrivateKeyPem(2048)
+	certificate := tlsRsaX509LocallySignedCertificatePem(caKey, caCertificate, key, commonName)
+
+	newCaKey := tlsRsaPrivateKeyPem(2048)
+	newCaCertificate := tlsRsaX509SelfSignedCaCertificatePem(newCaKey)
+	newCertificate := tlsRsaX509LocallySignedCertificatePem(newCaKey, newCaCertificate, key, commonName)
+
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAcmCertificateDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccAcmCertificateConfigPrivateKey("example.com"),
+				Config: testAccAcmCertificateConfigPrivateKey(certificate, key, caCertificate),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "tags.%", "0"),
-					resource.TestCheckResourceAttr(resourceName, "domain_name", "example.com"),
+					resource.TestCheckResourceAttr(resourceName, "domain_name", commonName),
 				),
-				ExpectNonEmptyPlan: true, // The certificate body is regenerated every time
 			},
 			{
-				Config: testAccAcmCertificateConfig_selfSigned("example"),
+				Config: testAccAcmCertificateConfigPrivateKey(newCertificate, key, newCaCertificate),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "tags.%", "0"),
-					resource.TestCheckResourceAttr(resourceName, "domain_name", "example.com"),
+					resource.TestCheckResourceAttr(resourceName, "domain_name", commonName),
 				),
-				ExpectNonEmptyPlan: true, // The certificate body is regenerated every time
 			},
 			{
-				Config: testAccAcmCertificateConfig_selfSigned("example2"),
+				Config: testAccAcmCertificateConfigPrivateKeyWithoutChain("example2.com"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "tags.%", "0"),
-					resource.TestCheckResourceAttr(resourceName, "domain_name", "example.org"),
+					resource.TestCheckResourceAttr(resourceName, "domain_name", "example2.com"),
 				),
-				ExpectNonEmptyPlan: true, // The certificate body is regenerated every time
 			},
 			{
 				ResourceName:      resourceName,
@@ -578,7 +585,7 @@ func TestAccAWSAcmCertificate_imported_IpAddress(t *testing.T) {
 		CheckDestroy: testAccCheckAcmCertificateDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccAcmCertificateConfigPrivateKey("1.2.3.4"),
+				Config: testAccAcmCertificateConfigPrivateKeyWithoutChain("1.2.3.4"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "domain_name", ""),
 					resource.TestCheckResourceAttr(resourceName, "subject_alternative_names.#", "0"),
@@ -665,68 +672,7 @@ resource "aws_acm_certificate" "cert" {
 `, domainName, validationMethod, tag1Key, tag1Value, tag2Key, tag2Value)
 }
 
-func testAccAcmCertificateConfig_selfSigned(certName string) string {
-	return fmt.Sprintf(`
-resource "tls_private_key" "%[1]s" {
-  algorithm = "RSA"
-}
-
-resource "tls_cert_request" "%[1]s" {
-  key_algorithm   = "RSA"
-  private_key_pem = "${tls_private_key.%[1]s.private_key_pem}"  
-  
-  subject {
-    common_name  = "%[1]s.com"
-    organization = "ACME Examples, Inc"
-  }
-}
-
-resource "tls_self_signed_cert" "%[1]s" {
-  key_algorithm   = "${tls_private_key.%[1]s.algorithm}"
-  private_key_pem = "${tls_private_key.%[1]s.private_key_pem}"  
-  
-  validity_period_hours = 4
-  early_renewal_hours   = 2
-  is_ca_certificate     = true  # Reasonable set of uses for a server SSL certificate.
-  
-  allowed_uses = [
-    "key_encipherment",
-    "digital_signature",
-    "server_auth",
-    "cert_signing",
-  ]  
-  
-  subject {
-    common_name  = "test.com"
-    organization = "ACME Examples, Inc"
-  }
-}
-
-resource "tls_locally_signed_cert" "%[1]s" {
-  cert_request_pem   = "${tls_cert_request.%[1]s.cert_request_pem}"
-  ca_key_algorithm   = "RSA"
-  ca_private_key_pem = "${tls_private_key.%[1]s.private_key_pem}"
-  ca_cert_pem        = "${tls_self_signed_cert.%[1]s.cert_pem}"
-
-  validity_period_hours = 3000
-  early_renewal_hours   = 3000  
-  
-  allowed_uses = [
-    "key_encipherment",
-    "digital_signature",
-    "server_auth",
-  ]
-}
-
-resource "aws_acm_certificate" "cert" {
-  private_key       = "${tls_private_key.%[1]s.private_key_pem}"
-  certificate_body  = "${tls_locally_signed_cert.%[1]s.cert_pem}"
-  certificate_chain = "${tls_self_signed_cert.%[1]s.cert_pem}"
-}
-`, certName)
-}
-
-func testAccAcmCertificateConfigPrivateKey(commonName string) string {
+func testAccAcmCertificateConfigPrivateKeyWithoutChain(commonName string) string {
 	key := tlsRsaPrivateKeyPem(2048)
 	certificate := tlsRsaX509SelfSignedCertificatePem(key, commonName)
 
@@ -736,6 +682,16 @@ resource "aws_acm_certificate" "test" {
   private_key      = "%[2]s"
 }
 `, tlsPemEscapeNewlines(certificate), tlsPemEscapeNewlines(key))
+}
+
+func testAccAcmCertificateConfigPrivateKey(certificate, privateKey, chain string) string {
+	return fmt.Sprintf(`
+resource "aws_acm_certificate" "test" {
+  certificate_body =  "%[1]s"
+  private_key      =  "%[2]s"
+  certificate_chain = "%[3]s"
+}
+`, tlsPemEscapeNewlines(certificate), tlsPemEscapeNewlines(privateKey), tlsPemEscapeNewlines(chain))
 }
 
 func testAccAcmCertificateConfig_disableCTLogging(domainName, validationMethod string) string {
