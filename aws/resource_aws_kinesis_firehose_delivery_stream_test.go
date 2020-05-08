@@ -1024,6 +1024,9 @@ func TestAccAWSKinesisFirehoseDeliveryStream_ElasticsearchConfigUpdates(t *testi
 				},
 			},
 		},
+		VpcConfigurationDescription: &firehose.VpcConfigurationDescription{
+			RoleARN: &rString,
+		},
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -2244,6 +2247,54 @@ resource "aws_kinesis_firehose_delivery_stream" "test" {
     }
   }
 }`
+
+var testAccKinesisFirehoseDeliveryStreamElasticsearchConfig_VpcConfiguration = testAccKinesisFirehoseDeliveryStreamConfig_ElasticsearchBasic + `
+resource aws_iam_role "test_vpc_role" {
+  name = "test_vpc_role"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "firehose.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+data "aws_iam_policy_document" "test_vpc_policy_document"{
+  statement {
+    actions = [
+      "ec2:DescribeVpcs",
+      "ec2:DescribeVpcAttribute",
+      "ec2:DescribeSubnets",
+      "ec2:DescribeSecurityGroups",
+      "ec2:DescribeNetworkInterfaces",
+      "ec2:CreateNetworkInterface",
+      "ec2:CreateNetworkInterfacePermission",
+      "ec2:DeleteNetworkInterface",
+    ]
+
+    resources = ["*"]
+  }
+}
+
+resource aws_iam_policy "test_vpc_policy" {
+  policy = data.aws_iam_policy_document.test_vpc_policy_document.json
+}
+
+resource "aws_iam_role_policy_attachment" "test_vpc_role_policy_attachment" {
+  policy_arn = aws_iam_policy.test_vpc_policy.arn
+  role = aws_iam_role.test_vpc_role.name
+}
+`
 
 var testAccKinesisFirehoseDeliveryStreamBaseElasticsearchConfig = testAccKinesisFirehoseDeliveryStreamBaseConfig + `
 resource "aws_elasticsearch_domain" "test_cluster" {

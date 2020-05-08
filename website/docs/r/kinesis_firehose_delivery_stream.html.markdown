@@ -215,6 +215,12 @@ resource "aws_kinesis_firehose_delivery_stream" "test_stream" {
         }
       }
     }
+
+    vpc_config {
+      role_arn = "${aws_iam_role.firehose_role_vpc.arn}"
+      security_group_ids = ["${aws_security_group.firehose_test.id}"]
+      subnet_ids = ["${aws_subnet.firehose_test.id}"]
+    }
   }
 }
 ```

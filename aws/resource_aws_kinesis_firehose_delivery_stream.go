@@ -101,6 +101,43 @@ func s3ConfigurationSchema() *schema.Schema {
 	}
 }
 
+func vpcConfigurationSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:             schema.TypeList,
+		Optional:         true,
+		MaxItems:         1,
+		DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"subnet_ids": {
+					Type:     schema.TypeList,
+					Required: true,
+					MinItems: 1,
+					MaxItems: 16,
+					Elem: &schema.Schema{Type: schema.TypeString, ValidateFunc: func(v interface{}, k string) (ws []string, errors []error) {
+						value := v.(string)
+						if len(value) < 1 || len(value) > 1024 {
+							errors = append(errors, fmt.Errorf(
+								"%q must be at least one character long and at most 1024 characters long", k))
+						}
+						return
+					}},
+				},
+				"security_group_ids": {
+					Type:     schema.TypeList,
+					Required: true,
+					Elem:     &schema.Schema{Type: schema.TypeString},
+				},
+				"role_arn": {
+					Type:         schema.TypeString,
+					Required:     true,
+					ValidateFunc: validateArn,
+				},
+			},
+		},
+	}
+}
+
 func processingConfigurationSchema() *schema.Schema {
 	return &schema.Schema{
 		Type:             schema.TypeList,
@@ -210,6 +247,7 @@ func flattenFirehoseElasticsearchConfiguration(description *firehose.Elasticsear
 		"s3_backup_mode":             aws.StringValue(description.S3BackupMode),
 		"index_rotation_period":      aws.StringValue(description.IndexRotationPeriod),
 		"processing_configuration":   flattenProcessingConfiguration(description.ProcessingConfiguration, aws.StringValue(description.RoleARN)),
+		"vpc_config":                 flattenVpcConfiguration(description.VpcConfigurationDescription),
 	}
 
 	if description.BufferingHints != nil {
@@ -544,6 +582,33 @@ func flattenFirehoseSchemaConfiguration(sc *firehose.SchemaConfiguration) []map[
 	}
 
 	return []map[string]interface{}{m}
+}
+
+func flattenVpcConfiguration(vcd *firehose.VpcConfigurationDescription) []map[string]interface{} {
+	if vcd == nil {
+		return []map[string]interface{}{}
+	}
+
+	subnetIds := make([]string, len(vcd.SubnetIds))
+	for i, s := range vcd.SubnetIds {
+		subnetIds[i] = aws.StringValue(s)
+	}
+
+	securityGroupIds := make([]string, len(vcd.SecurityGroupIds))
+	for i, s := range vcd.SecurityGroupIds {
+		securityGroupIds[i] = aws.StringValue(s)
+	}
+
+	vpcConfiguration := map[string]interface{}{
+		"subnet_ids":         subnetIds,
+		"security_group_ids": securityGroupIds,
+		"role_arn":           aws.StringValue(vcd.RoleARN),
+	}
+
+	vpcConfigurationOuter := make([]map[string]interface{}, 1)
+	vpcConfigurationOuter[0] = vpcConfiguration
+
+	return vpcConfigurationOuter
 }
 
 func flattenProcessingConfiguration(pc *firehose.ProcessingConfiguration, roleArn string) []map[string]interface{} {
@@ -1278,6 +1343,8 @@ func resourceAwsKinesisFirehoseDeliveryStream() *schema.Resource {
 						"cloudwatch_logging_options": cloudWatchLoggingOptionsSchema(),
 
 						"processing_configuration": processingConfigurationSchema(),
+
+						"vpc_config": vpcConfigurationSchema(),
 					},
 				},
 			},
@@ -1745,6 +1812,22 @@ func extractProcessingConfiguration(s3 map[string]interface{}) *firehose.Process
 	}
 }
 
+func extractVpcConfiguration(es map[string]interface{}) *firehose.VpcConfiguration {
+	config := es["vpc_config"].([]interface{})
+
+	if len(config) == 0 || config[0] == nil {
+		return nil
+	}
+
+	vpcConfiguration := config[0].(map[string]interface{})
+
+	return &firehose.VpcConfiguration{
+		SubnetIds:        expandStringList(vpcConfiguration["subnet_ids"].([]interface{})),
+		SecurityGroupIds: expandStringList(vpcConfiguration["security_group_ids"].([]interface{})),
+		RoleARN:          aws.String(vpcConfiguration["role_arn"].(string)),
+	}
+}
+
 func extractProcessors(processingConfigurationProcessors []interface{}) []*firehose.Processor {
 	processors := []*firehose.Processor{}
 
@@ -1925,6 +2008,10 @@ func createElasticsearchConfig(d *schema.ResourceData, s3Config *firehose.S3Dest
 
 	if _, ok := es["processing_configuration"]; ok {
 		config.ProcessingConfiguration = extractProcessingConfiguration(es)
+	}
+
+	if _, ok := es["vpc_config"]; ok {
+		config.VpcConfiguration = extractVpcConfiguration(es)
 	}
 
 	if indexRotationPeriod, ok := es["index_rotation_period"]; ok {
