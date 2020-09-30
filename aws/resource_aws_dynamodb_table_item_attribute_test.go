@@ -248,8 +248,8 @@ resource "aws_dynamodb_table" "test" {
 }
 
 resource "aws_dynamodb_table_item" "test" {
-  table_name = "${aws_dynamodb_table.test.name}"
-  hash_key = "${aws_dynamodb_table.test.hash_key}"
+  table_name = aws_dynamodb_table.test.name
+  hash_key = aws_dynamodb_table.test.hash_key
   item = <<ITEM
 {
 	"%[2]s": {"S": "hashKeyValue"}
@@ -258,7 +258,7 @@ ITEM
 }
 
 resource "aws_dynamodb_table_item_attribute" "test" {
-  table_name      = "${aws_dynamodb_table.test.name}"
+  table_name      = aws_dynamodb_table.test.name
   hash_key_value  = "hashKeyValue"
   attribute_key   = "%[3]s"
   attribute_value = "%[4]s"
@@ -287,9 +287,9 @@ resource "aws_dynamodb_table" "test" {
 }
 
 resource "aws_dynamodb_table_item" "test" {
-  table_name = "${aws_dynamodb_table.test.name}"
-  hash_key = "${aws_dynamodb_table.test.hash_key}"
-  range_key = "${aws_dynamodb_table.test.range_key}"
+  table_name = aws_dynamodb_table.test.name
+  hash_key = aws_dynamodb_table.test.hash_key
+  range_key = aws_dynamodb_table.test.range_key
   item = <<ITEM
 {
 	"%[2]s": {"S": "hashKeyValue"},
@@ -299,7 +299,7 @@ ITEM
 }
 
 resource "aws_dynamodb_table_item_attribute" "test" {
-  table_name      = "${aws_dynamodb_table.test.name}"
+  table_name      = aws_dynamodb_table.test.name
   hash_key_value  = "hashKeyValue"
   range_key_value = "rangeKeyValue"
   attribute_key   = "%[4]s"
