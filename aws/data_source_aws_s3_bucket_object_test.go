@@ -490,7 +490,7 @@ resource "aws_s3_bucket" "object_bucket" {
 	bucket = "tf-object-test-bucket-%d"
 }
 resource "aws_s3_bucket_object" "object" {
-	bucket = "${aws_s3_bucket.object_bucket.bucket}"
+	bucket = aws_s3_bucket.object_bucket.bucket
 	key = "tf-testing-obj-%d-forced-readable"
 	content = "-----BEGIN CERTIFICATE-----\nbWFpbiBDb250cm9sIFZhbGlkYXRXDDEdMBsGA1UECxMUUG9zaXRpdmVTU0wgV2ls==\n-----END CERTIFICATE-----"
 	content_type = "application/x-x509-ca-cert"

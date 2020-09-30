@@ -66,7 +66,7 @@ resource "aws_s3_bucket" "object_bucket" {
 	bucket = "tf-object-test-bucket-%d"
 }
 resource "aws_s3_bucket_object" "object" {
-	bucket = "${aws_s3_bucket.object_bucket.bucket}"
+	bucket = aws_s3_bucket.object_bucket.bucket
 	key = "tf-testing-obj-%d"
 	content = "Hello World"
 }
