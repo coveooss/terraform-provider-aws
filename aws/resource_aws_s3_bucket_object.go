@@ -196,6 +196,11 @@ func resourceAwsS3BucketObject() *schema.Resource {
 				Optional:     true,
 				ValidateFunc: validation.IsRFC3339Time,
 			},
+
+			"source_hash": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -572,6 +577,12 @@ func resourceAwsS3BucketObjectCustomizeDiff(_ context.Context, d *schema.Resourc
 	if hasS3BucketObjectContentChanges(d) {
 		return d.SetNewComputed("version_id")
 	}
+
+	if d.HasChange("source_hash") {
+		d.SetNewComputed("version_id")
+		d.SetNewComputed("etag")
+	}
+
 	return nil
 }
 
@@ -590,6 +601,7 @@ func hasS3BucketObjectContentChanges(d resourceDiffer) bool {
 		"metadata",
 		"server_side_encryption",
 		"source",
+		"source_hash",
 		"storage_class",
 		"website_redirect",
 	} {
