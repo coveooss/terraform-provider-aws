@@ -103,7 +103,9 @@ resource "aws_elb" "web" {
 resource "aws_key_pair" "auth" {
   key_name   = var.key_name
   public_key = file(var.public_key_path)
-  terraform  = "terraform-provider-aws/examples/two-tier"
+  tags       = {
+    terraform  = "terraform-provider-aws/examples/two-tier"
+  }
 }
 
 resource "aws_instance" "web" {
