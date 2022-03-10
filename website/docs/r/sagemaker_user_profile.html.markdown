@@ -65,7 +65,9 @@ The following arguments are supported:
 ##### Default Resource Spec
 
 * `instance_type` - (Optional) The instance type.
+* `lifecycle_config_arn` - (Optional) The Amazon Resource Name (ARN) of the Lifecycle Configuration attached to the Resource.
 * `sagemaker_image_arn` - (Optional) The Amazon Resource Name (ARN) of the SageMaker image created on the instance.
+* `sagemaker_image_version_arn` - (Optional) The ARN of the image version created on the instance.
 
 ##### Custom Image
 
@@ -84,7 +86,7 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-Sagemaker Code User Profiles can be imported using the `arn`, e.g.
+Sagemaker Code User Profiles can be imported using the `arn`, e.g.,
 
 ```
 $ terraform import aws_sagemaker_user_profile.test_user_profile arn:aws:sagemaker:us-west-2:123456789012:user-profile/domain-id/profile-name

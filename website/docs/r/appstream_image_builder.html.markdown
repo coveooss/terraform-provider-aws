@@ -14,7 +14,7 @@ Provides an AppStream image builder.
 
 ```terraform
 resource "aws_appstream_image_builder" "test_fleet" {
-  name                           = "Image Builder Name"
+  name                           = "Name"
   description                    = "Description of a ImageBuilder"
   display_name                   = "Display name of a ImageBuilder"
   enable_default_internet_access = false
@@ -85,7 +85,7 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-`aws_appstream_image_builder` can be imported using the `name`, e.g.
+`aws_appstream_image_builder` can be imported using the `name`, e.g.,
 
 ```
 $ terraform import aws_appstream_image_builder.example imageBuilderExample

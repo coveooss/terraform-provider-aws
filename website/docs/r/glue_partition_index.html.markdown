@@ -123,6 +123,13 @@ The following arguments are required:
 * `index_name` - (Required) Name of the partition index.
 * `keys` - (Required) Keys for the partition index.
 
+### Timeouts
+
+The `timeouts` block allows you to specify [timeouts](https://www.terraform.io/docs/configuration/blocks/resources/syntax.html#operation-timeouts) for certain actions:
+
+* `create` - (Defaults to 10 mins) Used when creating the partition index.
+* `delete` - (Defaults to 10 mins) Used when deleting the partition index.
+
 ## Attributes Reference
 
 In addition to all arguments above, the following attributes are exported:
@@ -131,7 +138,7 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-Glue Partition Indexes can be imported with their catalog ID (usually AWS account ID), database name, table name, and index name, e.g.
+Glue Partition Indexes can be imported with their catalog ID (usually AWS account ID), database name, table name, and index name, e.g.,
 
 ```
 $ terraform import aws_glue_partition_index.example 123456789012:MyDatabase:MyTable:index-name
