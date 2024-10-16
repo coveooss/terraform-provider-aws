@@ -24,9 +24,7 @@ builds:
       - openbsd
       - windows
     goarch:
-      - '386'
       - amd64
-      - arm
       - arm64
     ignore:
       - goarch: arm

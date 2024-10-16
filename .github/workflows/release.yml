@@ -1,13 +1,8 @@
-name: Release
-
+name: Build Tags
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+*'
-
-permissions:
-  contents: write
-
+      - "*"
 jobs:
   release-notes:
     runs-on: macos-latest
