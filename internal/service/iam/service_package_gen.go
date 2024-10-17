@@ -25,6 +25,10 @@ func (p *servicePackage) FrameworkResources(ctx context.Context) []*types.Servic
 			Name:    "Group Policies Exclusive",
 		},
 		{
+			Factory: newResourceGroupPolicyAttachmentsExclusive,
+			Name:    "Group Policy Attachments Exclusive",
+		},
+		{
 			Factory: newResourceRolePoliciesExclusive,
 			Name:    "Role Policies Exclusive",
 		},
@@ -35,6 +39,10 @@ func (p *servicePackage) FrameworkResources(ctx context.Context) []*types.Servic
 		{
 			Factory: newResourceUserPoliciesExclusive,
 			Name:    "User Policies Exclusive",
+		},
+		{
+			Factory: newResourceUserPolicyAttachmentsExclusive,
+			Name:    "User Policy Attachments Exclusive",
 		},
 	}
 }
