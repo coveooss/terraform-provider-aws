@@ -12,11 +12,13 @@ Use this data source to invoke custom lambda functions as data source.
 The lambda function is invoked with [RequestResponse](https://docs.aws.amazon.com/lambda/latest/dg/API_Invoke.html#API_Invoke_RequestSyntax)
 invocation type.
 
+~> **NOTE:** If you get a `KMSAccessDeniedException: Lambda was unable to decrypt the environment variables because KMS access was denied` error when invoking an [`aws_lambda_function`](/docs/providers/aws/r/lambda_function.html) with environment variables, the IAM role associated with the function may have been deleted and recreated _after_ the function was created. You can fix the problem two ways: 1) updating the function's role to another role and then updating it back again to the recreated role, or 2) by using Terraform to `taint` the function and `apply` your configuration again to recreate the function. (When you create a function, Lambda grants permissions on the KMS key to the function's IAM role. If the IAM role is recreated, the grant is no longer valid. Changing the function's role or recreating the function causes Lambda to update the grant.)
+
 ## Example Usage
 
-```hcl
+```terraform
 data "aws_lambda_invocation" "example" {
-  function_name = "${aws_lambda_function.lambda_function_test.function_name}"
+  function_name = aws_lambda_function.lambda_function_test.function_name
 
   input = <<JSON
 {
@@ -26,32 +28,20 @@ data "aws_lambda_invocation" "example" {
 JSON
 }
 
-output "result" {
-  description = "String result of Lambda execution"
-  value       = "${data.aws_lambda_invocation.example.result}"
-}
-
-# In Terraform 0.11 and earlier, the result_map attribute can be used
-# to convert a result JSON string to a map of string keys to string values.
-output "result_entry_tf011" {
-  value = "${data.aws_lambda_invocation.example.result_map["key1"]}"
-}
-
-# In Terraform 0.12 and later, the jsondecode() function can be used
-# to convert a result JSON string to native Terraform types.
-output "result_entry_tf012" {
+output "result_entry" {
   value = jsondecode(data.aws_lambda_invocation.example.result)["key1"]
 }
 ```
 
 ## Argument Reference
 
- * `function_name` - (Required) The name of the lambda function.
- * `input` - (Required) A string in JSON format that is passed as payload to the lambda function.
- * `qualifier` - (Optional) The qualifier (a.k.a version) of the lambda function. Defaults
+* `function_name` - (Required) Name of the lambda function.
+* `input` - (Required) String in JSON format that is passed as payload to the lambda function.
+* `qualifier` - (Optional) Qualifier (a.k.a version) of the lambda function. Defaults
  to `$LATEST`.
 
-## Attributes Reference
+## Attribute Reference
 
- * `result` - String result of the lambda function invocation.
- * `result_map` - (**DEPRECATED**) This field is set only if result is a map of primitive types, where the map is string keys and string values. In Terraform 0.12 and later, use the [`jsondecode()` function](/docs/configuration/functions/jsondecode.html) with the `result` attribute instead to convert the result to all supported native Terraform types.
+This data source exports the following attributes in addition to the arguments above:
+
+* `result` - String result of the lambda function invocation.
