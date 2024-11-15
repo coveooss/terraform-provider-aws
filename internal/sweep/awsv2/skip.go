@@ -37,6 +37,10 @@ func SkipSweepError(err error) bool {
 	if tfawserr.ErrMessageContains(err, "BadRequestException", "not supported") {
 		return true
 	}
+	// Example (GovCloud): ForbiddenException: HTTP status code 403: Access forbidden. You do not have permission to perform this operation. Check your credentials and try your request again
+	if tfawserr.ErrCodeEquals(err, "ForbiddenException") {
+		return true
+	}
 	// Example: InvalidAction: InvalidAction: Operation (ListPlatformApplications) is not supported in this region
 	if tfawserr.ErrMessageContains(err, "InvalidAction", "is not supported") {
 		return true
@@ -76,6 +80,10 @@ func SkipSweepError(err error) bool {
 	}
 	// For example from us-west-2 Route53 zone
 	if tfawserr.ErrMessageContains(err, "KeySigningKeyInParentDSRecord", "Due to DNS lookup failure") {
+		return true
+	}
+	// Example (evidently):  NoLongerSupportedException: AWS Evidently has been discontinued.
+	if tfawserr.ErrCodeEquals(err, "NoLongerSupportedException") {
 		return true
 	}
 	// Example (shield): ResourceNotFoundException: The subscription does not exist

@@ -164,7 +164,8 @@ func (d *userPoolDataSource) Read(ctx context.Context, request datasource.ReadRe
 
 	data.ID = data.UserPoolID
 
-	ignoreTagsConfig := d.Meta().IgnoreTagsConfig
+	// Cannot use Transparent Tagging because of UserPoolTags
+	ignoreTagsConfig := d.Meta().IgnoreTagsConfig(ctx)
 	tags := KeyValueTags(ctx, output.UserPoolTags).IgnoreAWS().IgnoreConfig(ignoreTagsConfig)
 	data.Tags = tftags.FlattenStringValueMap(ctx, tags.Map())
 	data.UserPoolTags = data.Tags

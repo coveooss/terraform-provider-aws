@@ -1333,7 +1333,7 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 
 		defaultTagsConfig := meta.(*conns.AWSClient).DefaultTagsConfig(ctx)
-		ignoreTagsConfig := meta.(*conns.AWSClient).IgnoreTagsConfig
+		ignoreTagsConfig := meta.(*conns.AWSClient).IgnoreTagsConfig(ctx)
 		tags := keyValueTags(ctx, volumeTags).IgnoreAWS().IgnoreConfig(ignoreTagsConfig)
 
 		if err := d.Set("volume_tags", tags.ResolveDuplicates(ctx, defaultTagsConfig, ignoreTagsConfig, d, "volume_tags", nil).Map()); err != nil {
@@ -1361,7 +1361,7 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta inte
 	// ARN
 
 	arn := arn.ARN{
-		Partition: meta.(*conns.AWSClient).Partition,
+		Partition: meta.(*conns.AWSClient).Partition(ctx),
 		Region:    meta.(*conns.AWSClient).Region,
 		Service:   names.EC2,
 		AccountID: meta.(*conns.AWSClient).AccountID,
@@ -1375,10 +1375,10 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta inte
 			Attribute:  awstypes.InstanceAttributeNameDisableApiStop,
 			InstanceId: aws.String(d.Id()),
 		})
-		if err != nil && !errs.IsUnsupportedOperationInPartitionError(meta.(*conns.AWSClient).Partition, err) {
+		if err != nil && !errs.IsUnsupportedOperationInPartitionError(meta.(*conns.AWSClient).Partition(ctx), err) {
 			return sdkdiag.AppendErrorf(diags, "getting attribute (%s): %s", awstypes.InstanceAttributeNameDisableApiStop, err)
 		}
-		if !errs.IsUnsupportedOperationInPartitionError(meta.(*conns.AWSClient).Partition, err) {
+		if !errs.IsUnsupportedOperationInPartitionError(meta.(*conns.AWSClient).Partition(ctx), err) {
 			d.Set("disable_api_stop", attr.DisableApiStop.Value)
 		}
 	}
@@ -2321,7 +2321,7 @@ func readBlockDevicesFromInstance(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	defaultTagsConfig := meta.(*conns.AWSClient).DefaultTagsConfig(ctx)
-	ignoreTagsConfig := meta.(*conns.AWSClient).IgnoreTagsConfig
+	ignoreTagsConfig := meta.(*conns.AWSClient).IgnoreTagsConfig(ctx)
 
 	for _, vol := range volResp.Volumes {
 		instanceBd := instanceBlockDevices[aws.ToString(vol.VolumeId)]
