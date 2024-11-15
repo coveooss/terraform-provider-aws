@@ -5,12 +5,10 @@ package s3_test
 
 import (
 	"fmt"
-	"regexp"
 	"testing"
 	"time"
 
 	"github.com/YakDriver/regexache"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	sdkacctest "github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-provider-aws/internal/acctest"
@@ -107,36 +105,28 @@ func TestAccS3ObjectDataSource_readableBody(t *testing.T) {
 		},
 	})
 }
+func TestAccS3ObjectDataSource_forcedContentType_readableBody(t *testing.T) {
 
-func TestAccDataSourceS3Object_forcedContentType_readableBody(t *testing.T) {
 	ctx := acctest.Context(t)
-	rInt := acctest.RandInt()
-	resourceOnlyConf, conf := testAccAWSDataSourceS3ObjectConfig_forcedContentType_readableBody(rInt)
+	rName := sdkacctest.RandomWithPrefix(acctest.ResourcePrefix)
+	resourceName := "aws_s3_object.test"
+	dataSourceName := fmt.Sprintf("data.%s", resourceName)
 
-	var rObj s3.GetObjectOutput
-	var dsObj s3.GetObjectOutput
-
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                  func() { acctest.PreCheck(ctx, t) },
-		Providers:                 testAccProviders,
+		ErrorCheck:                acctest.ErrorCheck(t, names.S3ServiceID),
+		ProtoV5ProviderFactories:  acctest.ProtoV5ProviderFactories,
 		PreventPostDestroyRefresh: true,
 		Steps: []resource.TestStep{
 			{
-				Config: resourceOnlyConf,
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAWSS3BucketObjectExists("aws_s3_bucket_object.object", &rObj),
-				),
-			},
-			{
-				Config: conf,
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAwsS3ObjectDataSourceExists("data.aws_s3_bucket_object.obj", &dsObj),
-					resource.TestCheckResourceAttr("data.aws_s3_bucket_object.obj", "content_length", "120"),
-					resource.TestCheckResourceAttr("data.aws_s3_bucket_object.obj", "content_type", "application/x-x509-ca-cert"),
-					resource.TestCheckResourceAttr("data.aws_s3_bucket_object.obj", "etag", "877716107971cdd406981bbbe85c97f4"),
-					resource.TestMatchResourceAttr("data.aws_s3_bucket_object.obj", "last_modified",
-						regexp.MustCompile("^[a-zA-Z]{3}, [0-9]+ [a-zA-Z]+ [0-9]{4} [0-9:]+ [A-Z]+$")),
-					resource.TestCheckResourceAttr("data.aws_s3_bucket_object.obj", "body", "-----BEGIN CERTIFICATE-----\nbWFpbiBDb250cm9sIFZhbGlkYXRXDDEdMBsGA1UECxMUUG9zaXRpdmVTU0wgV2ls==\n-----END CERTIFICATE-----"),
+				Config: testAccObjectDataSourceConfig_forcedContentType_readableBody(rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(dataSourceName, "content_type", "application/x-x509-ca-cert"),
+					resource.TestCheckResourceAttr(dataSourceName, "etag", "877716107971cdd406981bbbe85c97f4"),
+					resource.TestCheckResourceAttr(dataSourceName, "body", "-----BEGIN CERTIFICATE-----\nbWFpbiBDb250cm9sIFZhbGlkYXRXDDEdMBsGA1UECxMUUG9zaXRpdmVTU0wgV2ls==\n-----END CERTIFICATE-----"),
+					resource.TestCheckResourceAttr(dataSourceName, "content_length", "120"),
+					resource.TestCheckResourceAttrPair(dataSourceName, names.AttrContentType, resourceName, names.AttrContentType),
+					resource.TestMatchResourceAttr(dataSourceName, "last_modified", regexache.MustCompile(rfc1123RegexPattern)),
 				),
 			},
 		},
@@ -619,6 +609,27 @@ func TestAccS3ObjectDataSource_directoryBucket(t *testing.T) {
 	})
 }
 
+func testAccObjectDataSourceConfig_forcedContentType_readableBody(name string) string {
+	resources := fmt.Sprintf(`
+resource "aws_s3_bucket" "test" {
+	bucket = %[1]q
+}
+resource "aws_s3_object" "test" {
+	bucket       = "${aws_s3_bucket.test.bucket}"
+    key          = "%[1]s-key"
+	content      = "-----BEGIN CERTIFICATE-----\nbWFpbiBDb250cm9sIFZhbGlkYXRXDDEdMBsGA1UECxMUUG9zaXRpdmVTU0wgV2ls==\n-----END CERTIFICATE-----"
+	content_type = "application/x-x509-ca-cert"
+}
+data "aws_s3_object" "test" {
+	bucket              = aws_s3_bucket.test.bucket
+	key                 = aws_s3_object.test.key
+	forced_content_type = "text/text"
+}
+`, name)
+
+	return resources
+}
+
 func testAccObjectDataSourceConfig_basic(rName string) string {
 	return fmt.Sprintf(`
 resource "aws_s3_bucket" "test" {
@@ -1084,27 +1095,4 @@ data "aws_s3_object" "test" {
   key    = aws_s3_object.test.key
 }
 `, rName))
-}
-
-func testAccAWSDataSourceS3ObjectConfig_forcedContentType_readableBody(randInt int) (string, string) {
-	resources := fmt.Sprintf(`
-	resource "aws_s3_bucket" "object_bucket" {
-		bucket = "tf-object-test-bucket-%d"
-	}
-	resource "aws_s3_bucket_object" "object" {
-		bucket = "${aws_s3_bucket.object_bucket.bucket}"
-		key = "tf-testing-obj-%d-forced-readable"
-		content = "-----BEGIN CERTIFICATE-----\nbWFpbiBDb250cm9sIFZhbGlkYXRXDDEdMBsGA1UECxMUUG9zaXRpdmVTU0wgV2ls==\n-----END CERTIFICATE-----"
-		content_type = "application/x-x509-ca-cert"
-	}
-	`, randInt, randInt)
-
-	both := fmt.Sprintf(`%s
-	data "aws_s3_bucket_object" "obj" {
-		bucket = "tf-object-test-bucket-%d"
-		key = "tf-testing-obj-%d-forced-readable"
-		forced_content_type = "text/text"
-	}`, resources, randInt, randInt)
-
-	return resources, both
 }
