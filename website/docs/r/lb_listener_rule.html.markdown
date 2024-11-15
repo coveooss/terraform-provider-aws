@@ -1,5 +1,5 @@
 ---
-subcategory: "Elastic Load Balancing v2 (ALB/NLB)"
+subcategory: "ELB (Elastic Load Balancing)"
 layout: "aws"
 page_title: "AWS: aws_lb_listener_rule"
 description: |-
@@ -14,7 +14,7 @@ Provides a Load Balancer Listener Rule resource.
 
 ## Example Usage
 
-```hcl
+```terraform
 resource "aws_lb" "front_end" {
   # ...
 }
@@ -24,12 +24,12 @@ resource "aws_lb_listener" "front_end" {
 }
 
 resource "aws_lb_listener_rule" "static" {
-  listener_arn = "${aws_lb_listener.front_end.arn}"
+  listener_arn = aws_lb_listener.front_end.arn
   priority     = 100
 
   action {
     type             = "forward"
-    target_group_arn = "${aws_lb_target_group.static.arn}"
+    target_group_arn = aws_lb_target_group.static.arn
   }
 
   condition {
@@ -47,29 +47,13 @@ resource "aws_lb_listener_rule" "static" {
 
 # Forward action
 
-resource "aws_lb_listener_rule" "host_based_routing" {
-  listener_arn = "${aws_lb_listener.front_end.arn}"
+resource "aws_lb_listener_rule" "host_based_weighted_routing" {
+  listener_arn = aws_lb_listener.front_end.arn
   priority     = 99
 
   action {
-    type = "forward"
-    forward {
-      target_group {
-        arn    = "${aws_lb_target_group.main.arn}"
-        weight = 80
-      }
-
-      target_group {
-        arn    = "${aws_lb_target_group.canary.arn}"
-        weight = 20
-      }
-
-      stickiness {
-        enabled  = true
-        duration = 600
-      }
-
-    }
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.static.arn
   }
 
   condition {
@@ -81,13 +65,28 @@ resource "aws_lb_listener_rule" "host_based_routing" {
 
 # Weighted Forward action
 
-resource "aws_lb_listener_rule" "host_based_weighted_routing" {
-  listener_arn = "${aws_lb_listener.front_end.arn}"
+resource "aws_lb_listener_rule" "host_based_routing" {
+  listener_arn = aws_lb_listener.front_end.arn
   priority     = 99
 
   action {
-    type             = "forward"
-    target_group_arn = "${aws_lb_target_group.static.arn}"
+    type = "forward"
+    forward {
+      target_group {
+        arn    = aws_lb_target_group.main.arn
+        weight = 80
+      }
+
+      target_group {
+        arn    = aws_lb_target_group.canary.arn
+        weight = 20
+      }
+
+      stickiness {
+        enabled  = true
+        duration = 600
+      }
+    }
   }
 
   condition {
@@ -100,7 +99,7 @@ resource "aws_lb_listener_rule" "host_based_weighted_routing" {
 # Redirect action
 
 resource "aws_lb_listener_rule" "redirect_http_to_https" {
-  listener_arn = "${aws_lb_listener.front_end.arn}"
+  listener_arn = aws_lb_listener.front_end.arn
 
   action {
     type = "redirect"
@@ -123,7 +122,7 @@ resource "aws_lb_listener_rule" "redirect_http_to_https" {
 # Fixed-response action
 
 resource "aws_lb_listener_rule" "health_check" {
-  listener_arn = "${aws_lb_listener.front_end.arn}"
+  listener_arn = aws_lb_listener.front_end.arn
 
   action {
     type = "fixed-response"
@@ -162,28 +161,28 @@ resource "aws_cognito_user_pool_domain" "domain" {
 }
 
 resource "aws_lb_listener_rule" "admin" {
-  listener_arn = "${aws_lb_listener.front_end.arn}"
+  listener_arn = aws_lb_listener.front_end.arn
 
   action {
     type = "authenticate-cognito"
 
     authenticate_cognito {
-      user_pool_arn       = "${aws_cognito_user_pool.pool.arn}"
-      user_pool_client_id = "${aws_cognito_user_pool_client.client.id}"
-      user_pool_domain    = "${aws_cognito_user_pool_domain.domain.domain}"
+      user_pool_arn       = aws_cognito_user_pool.pool.arn
+      user_pool_client_id = aws_cognito_user_pool_client.client.id
+      user_pool_domain    = aws_cognito_user_pool_domain.domain.domain
     }
   }
 
   action {
     type             = "forward"
-    target_group_arn = "${aws_lb_target_group.static.arn}"
+    target_group_arn = aws_lb_target_group.static.arn
   }
 }
 
 # Authenticate-oidc Action
 
-resource "aws_lb_listener_rule" "admin" {
-  listener_arn = "${aws_lb_listener.front_end.arn}"
+resource "aws_lb_listener_rule" "oidc" {
+  listener_arn = aws_lb_listener.front_end.arn
 
   action {
     type = "authenticate-oidc"
@@ -200,35 +199,45 @@ resource "aws_lb_listener_rule" "admin" {
 
   action {
     type             = "forward"
-    target_group_arn = "${aws_lb_target_group.static.arn}"
+    target_group_arn = aws_lb_target_group.static.arn
   }
 }
 ```
 
 ## Argument Reference
 
-The following arguments are supported:
+This resource supports the following arguments:
 
 * `listener_arn` - (Required, Forces New Resource) The ARN of the listener to which to attach the rule.
 * `priority` - (Optional) The priority for the rule between `1` and `50000`. Leaving it unset will automatically set the rule with next available priority after currently existing highest rule. A listener can't have multiple rules with the same priority.
 * `action` - (Required) An Action block. Action blocks are documented below.
 * `condition` - (Required) A Condition block. Multiple condition blocks of different types can be set and all must be satisfied for the rule to match. Condition blocks are documented below.
+* `tags` - (Optional) A map of tags to assign to the resource. If configured with a provider [`default_tags` configuration block](https://registry.terraform.io/providers/hashicorp/aws/latest/docs#default_tags-configuration-block) present, tags with matching keys will overwrite those defined at the provider-level.
 
 ### Action Blocks
 
 Action Blocks (for `action`) support the following:
 
 * `type` - (Required) The type of routing action. Valid values are `forward`, `redirect`, `fixed-response`, `authenticate-cognito` and `authenticate-oidc`.
-* `target_group_arn` - (Optional) The ARN of the Target Group to which to route traffic. Specify only if `type` is `forward` and you want to route to a single target group. To route to one or more target groups, use a `forward` block instead.
-* `forward` - (Optional) Information for creating an action that distributes requests among one or more target groups. Specify only if `type` is `forward`. If you specify both `forward` block and `target_group_arn` attribute, you can specify only one target group using `forward` and it must be the same target group specified in `target_group_arn`.
-* `redirect` - (Optional) Information for creating a redirect action. Required if `type` is `redirect`.
-* `fixed_response` - (Optional) Information for creating an action that returns a custom HTTP response. Required if `type` is `fixed-response`.
 * `authenticate_cognito` - (Optional) Information for creating an authenticate action using Cognito. Required if `type` is `authenticate-cognito`.
 * `authenticate_oidc` - (Optional) Information for creating an authenticate action using OIDC. Required if `type` is `authenticate-oidc`.
+* `fixed_response` - (Optional) Information for creating an action that returns a custom HTTP response. Required if `type` is `fixed-response`.
+* `forward` - (Optional) Configuration block for creating an action that distributes requests among one or more target groups.
+  Specify only if `type` is `forward`.
+  Cannot be specified with `target_group_arn`.
+* `order` - (Optional) Order for the action.
+  The action with the lowest value for order is performed first.
+  Valid values are between `1` and `50000`.
+  Defaults to the position in the list of actions.
+* `redirect` - (Optional) Information for creating a redirect action. Required if `type` is `redirect`.
+* `target_group_arn` - (Optional) ARN of the Target Group to which to route traffic.
+  Specify only if `type` is `forward` and you want to route to a single target group.
+  To route to one or more target groups, use a `forward` block instead.
+  Cannot be specified with `forward`.
 
 Forward Blocks (for `forward`) support the following:
 
-* `target_group` - (Required) One or more target groups block.
+* `target_group` - (Required) One or more target group blocks.
 * `stickiness` - (Optional) The target group stickiness for the rule.
 
 Target Group Blocks (for `target_group`) supports the following:
@@ -294,8 +303,6 @@ One or more condition blocks can be set per rule. Most condition types can only 
 
 Condition Blocks (for `condition`) support the following:
 
-* `field` - (Optional, **DEPRECATED**) The type of condition. Valid values are `host-header` or `path-pattern`. Must also set `values`.
-* `values` - (Optional, **DEPRECATED**) List of exactly one pattern to match. Required when `field` is set.
 * `host_header` - (Optional) Contains a single `values` item which is a list of host header patterns to match. The maximum size of each pattern is 128 characters. Comparison is case insensitive. Wildcard characters supported: * (matches 0 or more characters) and ? (matches exactly 1 character). Only one pattern needs to match for the condition to be satisfied.
 * `http_header` - (Optional) HTTP headers to match. [HTTP Header block](#http-header-blocks) fields documented below.
 * `http_request_method` - (Optional) Contains a single `values` item which is a list of HTTP request methods or verbs to match. Maximum size is 40 characters. Only allowed characters are A-Z, hyphen (-) and underscore (\_). Comparison is case sensitive. Wildcards are not supported. Only one needs to match for the condition to be satisfied. AWS recommends that GET and HEAD requests are routed in the same way because the response to a HEAD request may be cached.
@@ -303,7 +310,7 @@ Condition Blocks (for `condition`) support the following:
 * `query_string` - (Optional) Query strings to match. [Query String block](#query-string-blocks) fields documented below.
 * `source_ip` - (Optional) Contains a single `values` item which is a list of source IP CIDR notations to match. You can use both IPv4 and IPv6 addresses. Wildcards are not supported. Condition is satisfied if the source IP address of the request matches one of the CIDR blocks. Condition is not satisfied by the addresses in the `X-Forwarded-For` header, use `http_header` condition instead.
 
-~> **NOTE::** Exactly one of `field`, `host_header`, `http_header`, `http_request_method`, `path_pattern`, `query_string` or `source_ip` must be set per condition.
+~> **NOTE::** Exactly one of `host_header`, `http_header`, `http_request_method`, `path_pattern`, `query_string` or `source_ip` must be set per condition.
 
 #### HTTP Header Blocks
 
@@ -323,17 +330,27 @@ Query String Value Blocks (for `query_string.values`) support the following:
 * `key` - (Optional) Query string key pattern to match.
 * `value` - (Required) Query string value pattern to match.
 
-## Attributes Reference
+## Attribute Reference
 
-The following attributes are exported in addition to the arguments listed above:
+This resource exports the following attributes in addition to the arguments above:
 
 * `id` - The ARN of the rule (matches `arn`)
 * `arn` - The ARN of the rule (matches `id`)
+* `tags_all` - A map of tags assigned to the resource, including those inherited from the provider [`default_tags` configuration block](https://registry.terraform.io/providers/hashicorp/aws/latest/docs#default_tags-configuration-block).
 
 ## Import
 
-Rules can be imported using their ARN, e.g.
+In Terraform v1.5.0 and later, use an [`import` block](https://developer.hashicorp.com/terraform/language/import) to import rules using their ARN. For example:
 
+```terraform
+import {
+  to = aws_lb_listener_rule.front_end
+  id = "arn:aws:elasticloadbalancing:us-west-2:187416307283:listener-rule/app/test/8e4497da625e2d8a/9ab28ade35828f96/67b3d2d36dd7c26b"
+}
 ```
-$ terraform import aws_lb_listener_rule.front_end arn:aws:elasticloadbalancing:us-west-2:187416307283:listener-rule/app/test/8e4497da625e2d8a/9ab28ade35828f96/67b3d2d36dd7c26b
+
+Using `terraform import`, import rules using their ARN. For example:
+
+```console
+% terraform import aws_lb_listener_rule.front_end arn:aws:elasticloadbalancing:us-west-2:187416307283:listener-rule/app/test/8e4497da625e2d8a/9ab28ade35828f96/67b3d2d36dd7c26b
 ```
