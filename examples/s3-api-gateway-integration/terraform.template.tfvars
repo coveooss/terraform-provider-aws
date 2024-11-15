@@ -1,5 +1,4 @@
-aws_access_key = "yourawsaccesskey"
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
 
-aws_secret_key = "yourawssecretkey"
-
-aws_region = "us-east-1"
+aws_region = "us-west-2"

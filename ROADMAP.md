@@ -1,93 +1,86 @@
-# Q2 2020 Roadmap
+# Roadmap:  Feb 2024 - Apr 2024
 
-Each quarter the team will highlight areas of focus for our work and upcoming research.
- 
-We select items for inclusion in the roadmap from the Top 10 Community Issues, [core services](docs/CORE_SERVICES.md), and internal priorities. When community pull requests exist for a given item, we will prioritize working with the original authors to include their contributions. If the author can no longer take on the implementation, HashiCorp will complete any additional work needed. 
+Every few months, the team will highlight areas of focus for our work and upcoming research.
 
-Each weekly release will include necessary tasks that lead to the completion of the stated goals as well as community pull requests, enhancements, and features that are not highlighted in the roadmap. 
+We select items for inclusion in the roadmap from the Top Community Issues, [Core Services](https://hashicorp.github.io/terraform-provider-aws/core-services/), and internal priorities. Where community sourced contributions exist we will work with the authors to review and merge their work. Where this does not exist or the original contributors are not available we will create the resources and implementation ourselves.
 
-To make contribution easier, we’ll be using the [`Help Wanted`](https://github.com/terraform-providers/terraform-provider-aws/labels/help%20wanted) tag to point to issues we’d like to include in this quarter’s series of releases. 
+Each weekly release will include necessary tasks that lead to the completion of the stated goals as well as community pull requests, enhancements, and features that are not highlighted in the roadmap.
 
-This quarter (May-July ‘20) we will be prioritizing the following areas of work: 
+This roadmap does not describe all the work that will be included within this timeframe, but it does describe our focus. We will include other work as events occur.
 
-## Currently In Progress
+In the period spanning Nov to Jan 2024 the AWS Provider added support for the following (among many others):
 
-### 3.0.0 
+- Amazon S3 Express
+- Amazon S3 Access Controls
+- Amazon DocDB Elastic Cluster
+- Amazon EBS Fast Snapshot Restore
+- Amazon Bedrock
 
-Milestone: [v3.0.0](https://github.com/terraform-providers/terraform-provider-aws/milestone/70)
+From Feb - April 2024, we will be prioritizing the following areas of work:
 
-Each year the TF AWS Provider team releases a major version. [Major releases](https://www.terraform.io/docs/extend/best-practices/versioning.html#example-major-number-increments) include code removals, deprecations, and breaking changes. A corresponding “upgrade guide” will be published alongside the release. 
+## New Services
 
-We'll be updating the linked milestone as we work to finalize and complete v3.0.0. 
+### AWS Resource Explorer Search
 
-### WAFv2
+Issue: [#36033](https://github.com/hashicorp/terraform-provider-aws/issues/36033)
 
-Issue: [#11046](https://github.com/terraform-providers/terraform-provider-aws/issues/11046)
+[Resource Explorer](https://aws.amazon.com/resourceexplorer/) Use AWS Resource Explorer to more easily search for and discover your resources across AWS Regions and accounts, such as Amazon Elastic Compute Cloud (Amazon EC2) instances, Amazon Kinesis streams, and Amazon DynamoDB tables.
 
-_AWS WAFv2 is a web application firewall that lets you monitor the HTTP and HTTPS requests that are forwarded to Amazon CloudFront, an Amazon API Gateway API, or an Application Load Balancer._
+Support for additional Resource explorer resources may include:
 
-Support for WAFv2 functionality will be wholly separate from WAF “Classic”. We’ll focus on enabling community contributions to WAFv2 first. If there is not a community contribution, HashiCorp will work to add the missing resource or data source.
+New Resource(s):
 
-Support for WAFv2 will include:
+- `aws_resourceexplorer2_search`
 
-#### Resources 
+### Amazon Verified Permissions
 
-* aws_wafv2_ip_set
-* aws_wafv2_regex_pattern_set
-* aws_wafv2_rule_group
-* aws_wafv2_web_acl
-* aws_wafv2_web_acl_association
+Issue: [#32158](https://github.com/hashicorp/terraform-provider-aws/issues/32158)
 
-#### Data Sources
+[Amazon Verified Permissions](https://aws.amazon.com/verified-permissions/) helps developers build more secure applications faster by externalizing authorization and centralizing policy management. They can also align application access with Zero Trust principles.
 
-* aws_wafv2_ip_set 
-* aws_wafv2_regex_pattern_set
-* aws_wafv2_rule_group
-* aws_wafv2_web_acl 
+Support for Amazon Verified Permissions may include:
 
-### Amazon Lex
+New Resource(s):
 
-Issue: [#905](https://github.com/terraform-providers/terraform-provider-aws/issues/905)
+- `aws_verifiedpermissions_policy`
+- `aws_verifiedpermissions_identity_source`
 
-_Amazon Lex is a service for building conversational interfaces into any application using voice and text. Amazon Lex provides the advanced deep learning functionalities of automatic speech recognition (ASR) for converting speech to text, and natural language understanding (NLU) to recognize the intent of the text, to enable you to build applications with highly engaging user experiences and lifelike conversational interactions._
+### Amazon Security Lake
 
-We’ll focus on enabling community contributions to Lex first. If there is not a community contribution, HashiCorp will work to add the missing resource or data source. 
+Issue: [#29376](https://github.com/hashicorp/terraform-provider-aws/issues/29376)
 
-Support for Amazon Lex will include: 
+[Amazon Security Lake](https://aws.amazon.com/security-lake/) automatically centralizes security data from AWS environments, SaaS providers, on premises, and cloud sources into a purpose-built data lake stored in your account. With Security Lake, you can get a more complete understanding of your security data across your entire organization. You can also improve the protection of your workloads, applications, and data.
 
-#### Resources
+Support for Amazon Security Lake may include:
 
-* aws_lex_slot_type
-* aws_lex_intent
-* aws_lex_bot
-* aws_lex_bot_alias
+New Resource(s):
 
-#### Data Sources
+- `aws_security_lake_aws_log_source`
+- `aws_security_lake_custom_log_source`
+- `aws_security_lake_subscriber`
 
-* aws_lex_slot_type
-* aws_lex_intent
-* aws_lex_bot
-* aws_lex_bot_alias
+### Amazon DevOps Guru
 
-### AWS Certificate Manager
+Issue: [#17919](https://github.com/hashicorp/terraform-provider-aws/issues/17919)
 
-Issue: [#8531](https://github.com/terraform-providers/terraform-provider-aws/issues/8531)
+[Amazon DevOps Guru](https://aws.amazon.com/security-lake/) uses ML to detect abnormal operating patterns so you can identify operational issues before they impact your customers.
 
-_AWS Certificate Manager is a service that allows you to easily provision, manage, and deploy public and private Secure Sockets Layer/Transport Layer Security (SSL/TLS) certificates for use with AWS services and your internal connected resources._
+Support for Amazon DevOps Guru may include:
 
-After evaluating the issue linked above, we concluded that the ACM resource was in need of a redesign. We’ll be prioritizing redesigning and updating the resource while we tackle the open bug reports and enhancements. Our research and redesign work will be tracked [here](https://github.com/terraform-providers/terraform-provider-aws/issues/13053).
+New Resource(s):
 
-## Research Topics
+- `aws_devopsguru_notification_channel`
+- `aws_devopsguru_resource_collection`
 
-Research topics include features, architectural changes, and ideas that we are pursuing in the longer term that may significantly impact the core user experience of the AWS provider. Research topics are discovery only and are not guaranteed to be included in a future release.
+## Enhancements to Existing Services
 
-### Global Default Tags
+This quarter most of our efforts will be focused on enhancements and stability improvements of our core services, rather than adding brand new services to the provider. The following list comprises the items most important to the community.
 
-Issue: [#7926](https://github.com/terraform-providers/terraform-provider-aws/issues/7926)
-
-We’ve been evaluating how users approach tagging their infrastructure in Terraform and the systems and practices that may interact with TF when it comes to tagging. The [initial discussions](https://github.com/hashicorp/terraform/issues/20866) led us to prioritize functionality that allows users to ignore specific tags globally in the AWS provider. As a complement to that feature, we are exploring the ability to supply global default tags to resources defined by the AWS Provider. 
-
-We are interested in your thoughts and feedback about this proposal and encourage you to comment on the issue linked above or schedule time with @maryelizbeth via the link on her [GitHub profile](https://github.com/maryelizbeth) to discuss. 
+- [Add in Security Hub Automation Rules](https://github.com/hashicorp/terraform-provider-aws/issues/32210)
+- [aws rds modify-certificates](https://github.com/hashicorp/terraform-provider-aws/issues/33196)
+- [Add EKS cluster IAM access management API resources](https://github.com/hashicorp/terraform-provider-aws/issues/34982)
+- [Support for AWS Shield Advance Subscriptions](https://github.com/hashicorp/terraform-provider-aws/issues/21430)
+- [Add resources for ComputeOptimizer Recommendation Preferences](https://github.com/hashicorp/terraform-provider-aws/issues/23945)
 
 ## Disclosures
 
