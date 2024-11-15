@@ -1,4 +1,7 @@
-package aws
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
+package s3
 
 import (
 	"fmt"
@@ -6,11 +9,12 @@ import (
 	"log"
 	"os"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 )
 
+// @SDKDataSource("aws_s3_download_bucket_object", name="Canonical User ID")
 func dataSourceAwsS3DownloadBucketObject() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceAwsS3DownloadBucketObjectRead,
