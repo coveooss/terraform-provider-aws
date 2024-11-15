@@ -1,5 +1,5 @@
 ---
-subcategory: "VPC"
+subcategory: "VPC (Virtual Private Cloud)"
 layout: "aws"
 page_title: "AWS: aws_vpc_peering_connection_options"
 description: |-
@@ -19,9 +19,11 @@ Using a VPC Peering Connection Options resource decouples management of the conn
 management of the VPC Peering Connection and allows options to be set correctly in cross-region and
 cross-account scenarios.
 
-Basic usage:
+## Example Usage
 
-```hcl
+### Basic Usage
+
+```terraform
 resource "aws_vpc" "foo" {
   cidr_block = "10.0.0.0/16"
 }
@@ -31,28 +33,23 @@ resource "aws_vpc" "bar" {
 }
 
 resource "aws_vpc_peering_connection" "foo" {
-  vpc_id      = "${aws_vpc.foo.id}"
-  peer_vpc_id = "${aws_vpc.bar.id}"
+  vpc_id      = aws_vpc.foo.id
+  peer_vpc_id = aws_vpc.bar.id
   auto_accept = true
 }
 
 resource "aws_vpc_peering_connection_options" "foo" {
-  vpc_peering_connection_id = "${aws_vpc_peering_connection.foo.id}"
+  vpc_peering_connection_id = aws_vpc_peering_connection.foo.id
 
   accepter {
     allow_remote_vpc_dns_resolution = true
   }
-
-  requester {
-    allow_vpc_to_remote_classic_link = true
-    allow_classic_link_to_remote_vpc = true
-  }
 }
 ```
 
-Basic cross-account usage:
+### Cross-Account Usage
 
-```hcl
+```terraform
 provider "aws" {
   alias = "requester"
 
@@ -66,7 +63,7 @@ provider "aws" {
 }
 
 resource "aws_vpc" "main" {
-  provider = "aws.requester"
+  provider = aws.requester
 
   cidr_block = "10.0.0.0/16"
 
@@ -75,7 +72,7 @@ resource "aws_vpc" "main" {
 }
 
 resource "aws_vpc" "peer" {
-  provider = "aws.accepter"
+  provider = aws.accepter
 
   cidr_block = "10.1.0.0/16"
 
@@ -84,16 +81,16 @@ resource "aws_vpc" "peer" {
 }
 
 data "aws_caller_identity" "peer" {
-  provider = "aws.accepter"
+  provider = aws.accepter
 }
 
 # Requester's side of the connection.
 resource "aws_vpc_peering_connection" "peer" {
-  provider = "aws.requester"
+  provider = aws.requester
 
-  vpc_id        = "${aws_vpc.main.id}"
-  peer_vpc_id   = "${aws_vpc.peer.id}"
-  peer_owner_id = "${data.aws_caller_identity.peer.account_id}"
+  vpc_id        = aws_vpc.main.id
+  peer_vpc_id   = aws_vpc.peer.id
+  peer_owner_id = data.aws_caller_identity.peer.account_id
   auto_accept   = false
 
   tags = {
@@ -103,9 +100,9 @@ resource "aws_vpc_peering_connection" "peer" {
 
 # Accepter's side of the connection.
 resource "aws_vpc_peering_connection_accepter" "peer" {
-  provider = "aws.accepter"
+  provider = aws.accepter
 
-  vpc_peering_connection_id = "${aws_vpc_peering_connection.peer.id}"
+  vpc_peering_connection_id = aws_vpc_peering_connection.peer.id
   auto_accept               = true
 
   tags = {
@@ -114,11 +111,11 @@ resource "aws_vpc_peering_connection_accepter" "peer" {
 }
 
 resource "aws_vpc_peering_connection_options" "requester" {
-  provider = "aws.requester"
+  provider = aws.requester
 
   # As options can't be set until the connection has been accepted
   # create an explicit dependency on the accepter.
-  vpc_peering_connection_id = "${aws_vpc_peering_connection_accepter.peer.id}"
+  vpc_peering_connection_id = aws_vpc_peering_connection_accepter.peer.id
 
   requester {
     allow_remote_vpc_dns_resolution = true
@@ -126,9 +123,9 @@ resource "aws_vpc_peering_connection_options" "requester" {
 }
 
 resource "aws_vpc_peering_connection_options" "accepter" {
-  provider = "aws.accepter"
+  provider = aws.accepter
 
-  vpc_peering_connection_id = "${aws_vpc_peering_connection_accepter.peer.id}"
+  vpc_peering_connection_id = aws_vpc_peering_connection_accepter.peer.id
 
   accepter {
     allow_remote_vpc_dns_resolution = true
@@ -138,42 +135,37 @@ resource "aws_vpc_peering_connection_options" "accepter" {
 
 ## Argument Reference
 
-The following arguments are supported:
+This resource supports the following arguments:
 
 * `vpc_peering_connection_id` - (Required) The ID of the requester VPC peering connection.
-* `accepter` (Optional) - An optional configuration block that allows for [VPC Peering Connection]
-(https://docs.aws.amazon.com/vpc/latest/peering/what-is-vpc-peering.html) options to be set for the VPC that accepts
-the peering connection (a maximum of one).
-* `requester` (Optional) - A optional configuration block that allows for [VPC Peering Connection]
-(https://docs.aws.amazon.com/vpc/latest/peering/what-is-vpc-peering.html) options to be set for the VPC that requests
-the peering connection (a maximum of one).
+* `accepter` (Optional) - An optional configuration block that allows for [VPC Peering Connection](https://docs.aws.amazon.com/vpc/latest/peering/what-is-vpc-peering.html) options to be set for the VPC that acceptsthe peering connection (a maximum of one).
+* `requester` (Optional) - A optional configuration block that allows for [VPC Peering Connection](https://docs.aws.amazon.com/vpc/latest/peering/what-is-vpc-peering.html) options to be set for the VPC that requeststhe peering connection (a maximum of one).
 
 #### Accepter and Requester Arguments
 
--> **Note:** When enabled, the DNS resolution feature requires that VPCs participating in the peering
-must have support for the DNS hostnames enabled. This can be done using the [`enable_dns_hostnames`]
-(vpc.html#enable_dns_hostnames) attribute in the [`aws_vpc`](vpc.html) resource. See [Using DNS with Your VPC]
-(http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-dns.html) user guide for more information.
+-> **Note:** When enabled, the DNS resolution feature requires that VPCs participating in the peering must have support for the DNS hostnames enabled. This can be done using the [`enable_dns_hostnames`](vpc.html#enable_dns_hostnames) attribute in the [`aws_vpc`](vpc.html) resource. See [Using DNS with Your VPC](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-dns.html) user guide for more information.
 
-* `allow_remote_vpc_dns_resolution` - (Optional) Allow a local VPC to resolve public DNS hostnames to
-private IP addresses when queried from instances in the peer VPC.
-* `allow_classic_link_to_remote_vpc` - (Optional) Allow a local linked EC2-Classic instance to communicate
-with instances in a peer VPC. This enables an outbound communication from the local ClassicLink connection
-to the remote VPC. This option is not supported for inter-region VPC peering.
-* `allow_vpc_to_remote_classic_link` - (Optional) Allow a local VPC to communicate with a linked EC2-Classic
-instance in a peer VPC. This enables an outbound communication from the local VPC to the remote ClassicLink
-connection. This option is not supported for inter-region VPC peering.
+* `allow_remote_vpc_dns_resolution` - (Optional) Allow a local VPC to resolve public DNS hostnames to private IP addresses when queried from instances in the peer VPC.
 
-## Attributes Reference
+## Attribute Reference
 
-In addition to all arguments above, the following attributes are exported:
+This resource exports the following attributes in addition to the arguments above:
 
 * `id` - The ID of the VPC Peering Connection Options.
 
 ## Import
 
-VPC Peering Connection Options can be imported using the `vpc peering id`, e.g.
+In Terraform v1.5.0 and later, use an [`import` block](https://developer.hashicorp.com/terraform/language/import) to import VPC Peering Connection Options using the VPC peering `id`. For example:
 
+```terraform
+import {
+  to = aws_vpc_peering_connection_options.foo
+  id = "pcx-111aaa111"
+}
 ```
-$ terraform import aws_vpc_peering_connection_options.foo pcx-111aaa111
+
+Using `terraform import`, import VPC Peering Connection Options using the VPC peering `id`. For example:
+
+```console
+% terraform import aws_vpc_peering_connection_options.foo pcx-111aaa111
 ```
