@@ -1,11 +1,6 @@
-variable "aws_access_key" {
-  description = ""
-}
-
-variable "aws_secret_key" {
-  description = ""
-}
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
 
 variable "aws_region" {
-  description = ""
+  default = "us-west-2"
 }

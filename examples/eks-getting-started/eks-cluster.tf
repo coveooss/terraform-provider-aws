@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 #
 # EKS Cluster Resources
 #  * IAM Role to allow EKS service to manage other AWS services
@@ -29,8 +32,8 @@ resource "aws_iam_role_policy_attachment" "demo-cluster-AmazonEKSClusterPolicy" 
   role       = aws_iam_role.demo-cluster.name
 }
 
-resource "aws_iam_role_policy_attachment" "demo-cluster-AmazonEKSServicePolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+resource "aws_iam_role_policy_attachment" "demo-cluster-AmazonEKSVPCResourceController" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
   role       = aws_iam_role.demo-cluster.name
 }
 
@@ -62,7 +65,7 @@ resource "aws_security_group_rule" "demo-cluster-ingress-workstation-https" {
 }
 
 resource "aws_eks_cluster" "demo" {
-  name     = var.cluster-name
+  name     = var.cluster_name
   role_arn = aws_iam_role.demo-cluster.arn
 
   vpc_config {
@@ -72,6 +75,6 @@ resource "aws_eks_cluster" "demo" {
 
   depends_on = [
     aws_iam_role_policy_attachment.demo-cluster-AmazonEKSClusterPolicy,
-    aws_iam_role_policy_attachment.demo-cluster-AmazonEKSServicePolicy,
+    aws_iam_role_policy_attachment.demo-cluster-AmazonEKSVPCResourceController,
   ]
 }
