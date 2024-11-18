@@ -4,6 +4,7 @@ on:
     branches:
       - main
       - master
+      - "feature/dt-7263-ci"
 jobs:
   build:
     name: Build
