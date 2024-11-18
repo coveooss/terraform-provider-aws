@@ -1,8 +1,9 @@
-name: Build Tags
+name: Draft Release
 on:
   push:
-    tags:
-      - "*"
+    branches:
+      - main
+      - master
 jobs:
   build:
     name: Build
@@ -23,6 +24,6 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean
+          args: release --clean --snapshot --draft
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
