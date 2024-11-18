@@ -45,6 +45,9 @@ checksum:
       name_template: '{{ .ProjectName }}_{{ .Version }}_manifest.json'
   name_template: '{{ .ProjectName }}_{{ .Version }}_SHA256SUMS'
 release:
+  github:
+    owner: coveooss
+    name: terraform-provider-aws
   prerelease: auto
   extra_files:
     - glob: 'terraform-registry-manifest.json'
