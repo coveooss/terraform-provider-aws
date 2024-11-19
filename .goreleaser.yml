@@ -5,20 +5,14 @@ archives:
       - src: LICENSE
         dst: LICENSE.txt
     format: zip
-    name_template: >-
-      {{ .ProjectName }}_
-      {{- .Version }}_
-      {{- if eq .Os "darwin" }}macOS
-      {{- else }}{{ .Os }}{{ end }}_
-      {{- if eq .Arch "amd64" }}64-bits
-      {{- else if eq .Arch "386" }}32-bits
-      {{- else }}{{ .Arch }}{{ end }}
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
 before:
   hooks:
     - 'go mod download'
 builds:
-  - # Binary naming only required for Terraform CLI 0.12
-    binary: '{{ .ProjectName }}_{{ .Version }}_x5'
+  -
+    # Binary naming only required for Terraform CLI 0.12
+    binary: '{{ .ProjectName }}_v{{ .Version }}_x5'
     env:
       - CGO_ENABLED=0
     flags:
@@ -36,7 +30,7 @@ builds:
       - goarch: arm64
         goos: windows
     ldflags:
-      - -s -w -X 'github.com/coveooss/terraform-provider-aws/version.ProviderVersion={{ .Version }}'
+      - -s -w -X 'github.com/hashicorp/terraform-provider-aws/version.ProviderVersion={{ .Version }}'
     mod_timestamp: '{{ .CommitTimestamp }}'
 checksum:
   algorithm: sha256
@@ -52,5 +46,7 @@ release:
   extra_files:
     - glob: 'terraform-registry-manifest.json'
       name_template: '{{ .ProjectName }}_{{ .Version }}_manifest.json'
+  ids:
+    - none
 snapshot:
-  version_template: "next"
+  version_template: "{{ .Tag }}-next"
