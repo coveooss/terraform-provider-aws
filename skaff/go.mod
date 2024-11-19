@@ -4,7 +4,7 @@ go 1.23.2
 
 require (
 	github.com/YakDriver/regexache v0.24.0
-	github.com/hashicorp/terraform-provider-aws v1.60.1-0.20220322001452-8f7a597d0c24
+	github.com/hashicorp/terraform-provider-aws v1.60.1-0.20241119143500-01370721d587
 	github.com/spf13/cobra v1.8.1
 )
 
