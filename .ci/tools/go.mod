@@ -7,7 +7,7 @@ require (
 	github.com/client9/misspell v0.3.4
 	github.com/golangci/golangci-lint v1.61.0
 	github.com/hashicorp/copywrite v0.19.0
-	github.com/hashicorp/go-changelog v0.0.0-20240318095659-4d68c58a6e7f
+	github.com/hashicorp/go-changelog v0.0.0-20241111140550-beb7aaabfbd1
 	github.com/katbyte/terrafmt v0.5.4
 	github.com/pavius/impi v0.0.3
 	github.com/rhysd/actionlint v1.7.4
