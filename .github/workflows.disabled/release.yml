@@ -98,11 +98,11 @@ jobs:
 
           echo -e "## $NEW_RELEASE_LINE (Unreleased)\n$(cat $CHANGELOG_FILE_NAME)" > $CHANGELOG_FILE_NAME
       - run: |
-          git config --local user.email changelogbot@hashicorp.com
-          git config --local user.name changelogbot
-          git add CHANGELOG.md
-          git commit -m "Update CHANGELOG.md after ${{ github.ref_name }}"
-          git push
+            git config --local user.email changelogbot@hashicorp.com
+            git config --local user.name changelogbot
+            git add CHANGELOG.md
+            git commit -m "Update CHANGELOG.md after ${{ github.ref_name }}"
+            git push
   upload-tag-before-post-publish:
     needs: [terraform-provider-release]
     runs-on: ubuntu-latest
