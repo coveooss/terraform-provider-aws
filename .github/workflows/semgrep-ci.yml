@@ -28,7 +28,7 @@ jobs:
     name: Validate Code Quality Rules
     runs-on: ubuntu-latest
     container:
-      image: "returntocorp/semgrep:1.52.0"
+      image: "returntocorp/semgrep:1.96.0"
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - run: |
@@ -43,7 +43,7 @@ jobs:
     needs: [semgrep-validate]
     runs-on: ubuntu-latest
     container:
-      image: "returntocorp/semgrep:1.52.0"
+      image: "returntocorp/semgrep:1.96.0"
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - run: |
@@ -54,7 +54,7 @@ jobs:
     needs: [semgrep-test]
     runs-on: ubuntu-latest
     container:
-      image: "returntocorp/semgrep:1.52.0"
+      image: "returntocorp/semgrep:1.96.0"
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - run: |
@@ -74,7 +74,7 @@ jobs:
     name: Naming Scan Caps/AWS/EC2
     runs-on: ubuntu-latest
     container:
-      image: "returntocorp/semgrep:1.52.0"
+      image: "returntocorp/semgrep:1.96.0"
     if: (github.action != 'dependabot[bot]')
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -85,7 +85,7 @@ jobs:
     name: Test Configs Scan
     runs-on: ubuntu-latest
     container:
-      image: "returntocorp/semgrep:1.52.0"
+      image: "returntocorp/semgrep:1.96.0"
     if: (github.action != 'dependabot[bot]')
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -96,7 +96,7 @@ jobs:
     name: Service Name Scan A-C
     runs-on: ubuntu-latest
     container:
-      image: "returntocorp/semgrep:1.52.0"
+      image: "returntocorp/semgrep:1.96.0"
     if: (github.action != 'dependabot[bot]')
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -107,7 +107,7 @@ jobs:
     name: Service Name Scan C-I
     runs-on: ubuntu-latest
     container:
-      image: "returntocorp/semgrep:1.52.0"
+      image: "returntocorp/semgrep:1.96.0"
     if: (github.action != 'dependabot[bot]')
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -118,7 +118,7 @@ jobs:
     name: Service Name Scan I-Q
     runs-on: ubuntu-latest
     container:
-      image: "returntocorp/semgrep:1.52.0"
+      image: "returntocorp/semgrep:1.96.0"
     if: (github.action != 'dependabot[bot]')
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -129,7 +129,7 @@ jobs:
     name: Service Name Scan Q-Z
     runs-on: ubuntu-latest
     container:
-      image: "returntocorp/semgrep:1.52.0"
+      image: "returntocorp/semgrep:1.96.0"
     if: (github.action != 'dependabot[bot]')
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
