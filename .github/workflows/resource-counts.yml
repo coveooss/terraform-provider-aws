@@ -19,7 +19,7 @@ jobs:
           installation_retrieval_payload: ${{ secrets.INSTALLATION_ID }}
           private_key: ${{secrets.APP_PEM }}
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+      - uses: hashicorp/setup-terraform@fd3bf06534214722507d89f9d499612bf7799787
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
           terraform_wrapper: false
