@@ -18,6 +18,13 @@ jobs:
         uses: actions/checkout@v4
       - name: Download dependencies
         run: go mod download
+      - run: df -h
+      - name: Free space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          sudo docker builder prune -a      
+      - run: df -h
       - name: Release
         uses: goreleaser/goreleaser-action@7ec5c2b0c6cdda6e8bbb49444bc797dd33d74dd8
         with:

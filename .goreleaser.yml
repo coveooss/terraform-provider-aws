@@ -24,9 +24,9 @@ builds:
     flags:
       - -trimpath
     goos:
-#      - darwin
+      - darwin
       - linux
-#      - windows
+      - windows
     goarch:
       - amd64
       - arm64
