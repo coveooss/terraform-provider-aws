@@ -1,4 +1,4 @@
-name: Build Tags
+name: Release
 on:
   push:
     tags:
@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Download dependencies
         run: go mod download
-      - name: Free space
+      - name: Free space # Otherwise, runner runs out of space. 
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
           sudo docker image prune --all --force
