@@ -569,6 +569,7 @@ github.com/golangci/gofmt v0.0.0-20240816233607-d8596aa466a9 h1:/1322Qns6BtQxUZD
 github.com/golangci/gofmt v0.0.0-20240816233607-d8596aa466a9/go.mod h1:Oesb/0uFAyWoaw1U1qS5zyjCg5NP9C9iwjnI4tIsXEE=
 github.com/golangci/golangci-lint v1.61.0 h1:VvbOLaRVWmyxCnUIMTbf1kDsaJbTzH20FAMXTAlQGu8=
 github.com/golangci/golangci-lint v1.61.0/go.mod h1:e4lztIrJJgLPhWvFPDkhiMwEFRrWlmFbrZea3FsJyN8=
+github.com/golangci/golangci-lint v1.62.0/go.mod h1:jtoOhQcKTz8B6dGNFyfQV3WZkQk+YvBDewDtNpiAJts=
 github.com/golangci/misspell v0.6.0 h1:JCle2HUTNWirNlDIAUO44hUsKhOFqGPoC4LZxlaSXDs=
 github.com/golangci/misspell v0.6.0/go.mod h1:keMNyY6R9isGaSAu+4Q8NMBwMPkh15Gtc8UCVoDtAWo=
 github.com/golangci/modinfo v0.3.4 h1:oU5huX3fbxqQXdfspamej74DFX0kyGLkw1ppvXoJ8GA=
@@ -856,6 +857,7 @@ github.com/kyoh86/exportloopref v0.1.11 h1:1Z0bcmTypkL3Q4k+IDHMWTcnCliEZcaPiIe0/
 github.com/kyoh86/exportloopref v0.1.11/go.mod h1:qkV4UF1zGl6EkF1ox8L5t9SwyeBAZ3qLMd6up458uqA=
 github.com/lasiar/canonicalheader v1.1.1 h1:wC+dY9ZfiqiPwAexUApFush/csSPXeIi4QqyxXmng8I=
 github.com/lasiar/canonicalheader v1.1.1/go.mod h1:cXkb3Dlk6XXy+8MVQnF23CYKWlyA7kfQhSw2CcZtZb0=
+github.com/lasiar/canonicalheader v1.1.2/go.mod h1:qJCeLFS0G/QlLQ506T+Fk/fWMa2VmBUiEI2cuMK4djI=
 github.com/ldez/gomoddirectives v0.2.4 h1:j3YjBIjEBbqZ0NKtBNzr8rtMHTOrLPeiwTkfUJZ3alg=
 github.com/ldez/gomoddirectives v0.2.4/go.mod h1:oWu9i62VcQDYp9EQ0ONTfqLNh+mDLWWDO+SO0qSQw5g=
 github.com/ldez/tagliatelle v0.5.0 h1:epgfuYt9v0CG3fms0pEgIMNPuFf/LpPIfjk4kyqSioo=
@@ -1154,6 +1156,7 @@ github.com/tenntenn/text/transform v0.0.0-20200319021203-7eef512accb3 h1:f+jULpR
 github.com/tenntenn/text/transform v0.0.0-20200319021203-7eef512accb3/go.mod h1:ON8b8w4BN/kE1EOhwT0o+d62W65a6aPw1nouo9LMgyY=
 github.com/terraform-linters/tflint v0.53.0 h1:+ofeWWTnDezkm3H9PCi1n+QS+cUw+exRJBamXVAjm5Y=
 github.com/terraform-linters/tflint v0.53.0/go.mod h1:axHmpsdLfa4MJakpPiiiUXv+sliuf/RqPOamvsD14tI=
+github.com/terraform-linters/tflint v0.54.0/go.mod h1:AzCDFDkum7sKTQN/W4FjWL6u+TNeREdFVj7cixFCK5g=
 github.com/terraform-linters/tflint-plugin-sdk v0.21.0 h1:RoorxuuWh1RuL09PWAmaCKw/hmb9QP5dukGXZiB0fs8=
 github.com/terraform-linters/tflint-plugin-sdk v0.21.0/go.mod h1:f7ruoYh44RQvnZRxpWhn8JFkpEVlQFT8wC9MhIF0Rp4=
 github.com/terraform-linters/tflint-ruleset-terraform v0.10.0 h1:L+3K3oGvZe5UdQ9F6PMQ6n69A2+Q11dBSg+5nTvxJi8=
@@ -1232,6 +1235,7 @@ go-simpler.org/assert v0.9.0 h1:PfpmcSvL7yAnWyChSjOz6Sp6m9j5lyK8Ok9pEL31YkQ=
 go-simpler.org/assert v0.9.0/go.mod h1:74Eqh5eI6vCK6Y5l3PI8ZYFXG4Sa+tkr70OIPJAUr28=
 go-simpler.org/musttag v0.12.2 h1:J7lRc2ysXOq7eM8rwaTYnNrHd5JwjppzB6mScysB2Cs=
 go-simpler.org/musttag v0.12.2/go.mod h1:uN1DVIasMTQKk6XSik7yrJoEysGtR2GRqvWnI9S7TYM=
+go-simpler.org/musttag v0.13.0/go.mod h1:FTzIGeK6OkKlUDVpj0iQUXZLUO1Js9+mvykDQy9C5yM=
 go-simpler.org/sloglint v0.7.2 h1:Wc9Em/Zeuu7JYpl+oKoYOsQSy2X560aVueCW/m6IijY=
 go-simpler.org/sloglint v0.7.2/go.mod h1:US+9C80ppl7VsThQclkM7BkCHQAzuz8kHLsW3ppuluo=
 go.etcd.io/etcd/api/v3 v3.5.4/go.mod h1:5GB2vv4A4AOn3yk7MftYGHkUfGtDHnEraIjym4dYz5A=

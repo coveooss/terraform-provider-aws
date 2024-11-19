@@ -2,9 +2,9 @@ module testdata
 
 go 1.23
 
-toolchain go1.23.2
+toolchain go1.23.3
 
-require github.com/hashicorp/terraform-plugin-sdk/v2 v2.34.0
+require github.com/hashicorp/terraform-plugin-sdk/v2 v2.35.0
 
 require (
 	github.com/agext/levenshtein v1.2.3 // indirect

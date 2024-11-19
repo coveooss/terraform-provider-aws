@@ -262,7 +262,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/xray v1.29.5
 	github.com/aws/smithy-go v1.22.0
 	github.com/beevik/etree v1.4.1
-	github.com/cedar-policy/cedar-go v0.1.0
+	github.com/cedar-policy/cedar-go v0.4.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dlclark/regexp2 v1.11.4
 	github.com/gertd/go-pluralize v0.2.1
@@ -302,7 +302,7 @@ require (
 	golang.org/x/mod v0.22.0
 	golang.org/x/text v0.20.0
 	golang.org/x/tools v0.27.0
-	gopkg.in/dnaeon/go-vcr.v3 v3.2.1
+	gopkg.in/dnaeon/go-vcr.v3 v3.2.2
 	gopkg.in/yaml.v2 v2.4.0
 	syreclabs.com/go/faker v1.2.3
 )

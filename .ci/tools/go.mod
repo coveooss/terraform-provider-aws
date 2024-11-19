@@ -5,13 +5,13 @@ go 1.23.2
 require (
 	github.com/YakDriver/tfproviderdocs v0.16.6
 	github.com/client9/misspell v0.3.4
-	github.com/golangci/golangci-lint v1.61.0
+	github.com/golangci/golangci-lint v1.62.0
 	github.com/hashicorp/copywrite v0.19.0
 	github.com/hashicorp/go-changelog v0.0.0-20240318095659-4d68c58a6e7f
 	github.com/katbyte/terrafmt v0.5.4
 	github.com/pavius/impi v0.0.3
 	github.com/rhysd/actionlint v1.7.4
-	github.com/terraform-linters/tflint v0.53.0
+	github.com/terraform-linters/tflint v0.54.0
 	github.com/uber-go/gopatch v0.4.0
 	mvdan.cc/gofumpt v0.7.0
 )
@@ -194,7 +194,7 @@ require (
 	github.com/kulti/thelper v0.6.3 // indirect
 	github.com/kunwardeep/paralleltest v1.0.10 // indirect
 	github.com/kyoh86/exportloopref v0.1.11 // indirect
-	github.com/lasiar/canonicalheader v1.1.1 // indirect
+	github.com/lasiar/canonicalheader v1.1.2 // indirect
 	github.com/ldez/gomoddirectives v0.2.4 // indirect
 	github.com/ldez/tagliatelle v0.5.0 // indirect
 	github.com/leonklingele/grouper v1.1.2 // indirect
@@ -306,7 +306,7 @@ require (
 	github.com/zclconf/go-cty v1.15.0 // indirect
 	github.com/zclconf/go-cty-yaml v1.1.0 // indirect
 	gitlab.com/bosi/decorder v0.4.2 // indirect
-	go-simpler.org/musttag v0.12.2 // indirect
+	go-simpler.org/musttag v0.13.0 // indirect
 	go-simpler.org/sloglint v0.7.2 // indirect
 	go.mongodb.org/mongo-driver v1.17.1 // indirect
 	go.opencensus.io v0.24.0 // indirect

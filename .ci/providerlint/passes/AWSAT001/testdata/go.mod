@@ -2,11 +2,11 @@ module testdata
 
 go 1.23
 
-toolchain go1.23.2
+toolchain go1.23.3
 
 require (
 	github.com/YakDriver/regexache v0.24.0
-	github.com/hashicorp/terraform-plugin-sdk/v2 v2.34.0
+	github.com/hashicorp/terraform-plugin-sdk/v2 v2.35.0
 )
 
 require (
