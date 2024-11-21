@@ -67,7 +67,7 @@ jobs:
       - name: Exclude workflow files from the branch
         if: env.UP_TO_DATE == 'false'
         run: |
-          git reset HEAD .github/workflows/* || echo "No workflows to reset"
+          git reset HEAD --hard .github/workflows/* || echo "No workflows to reset"
           git checkout -- .github/workflows/* || echo "No workflows to discard"
           git status
 
