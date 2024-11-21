@@ -72,7 +72,7 @@ jobs:
           git checkout origin/main -- .github/workflows
           git add .github/workflows
           git commit -m "chore: checkout .github/workflows files from main branch"
-          git diff main
+          git diff origin/main
           
       - name: Push branch to fork
         if: env.UP_TO_DATE == 'false'
