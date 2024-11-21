@@ -8,7 +8,6 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  actions: write
   
 jobs:
   check-latest-release:
@@ -55,6 +54,10 @@ jobs:
         run: |
           git remote add upstream https://github.com/$UPSTREAM_OWNER/$UPSTREAM_REPO.git
           git fetch upstream --tags
+      - name: Exclude workflow files from the branch
+        run: |
+          git reset .github/workflows/*
+          git commit -m "Exclude workflow files from branch" || echo "No changes to commit"
 
       - name: Create branch from upstream tag
         if: env.UP_TO_DATE == 'false'
