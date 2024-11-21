@@ -12,7 +12,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
+          fetch-depth: 0
 
       - name: Fetch Latest Release from Upstream
         id: latest-release
@@ -43,6 +43,26 @@ jobs:
             echo "Your fork does NOT contain the latest release commit from the upstream repository ($LATEST_RELEASE_COMMIT)."
             echo "UP_TO_DATE=false" >> $GITHUB_ENV
           fi
+      - name: Add upstream repository
+        if: env.UP_TO_DATE == 'false'
+        run: |
+          git remote add upstream https://github.com/$UPSTREAM_OWNER/$UPSTREAM_REPO.git
+          git fetch upstream --tags
+
+      - name: Create branch from upstream tag
+        if: env.UP_TO_DATE == 'false'
+        run: |
+          git fetch upstream $LATEST_RELEASE_TAG
+          git checkout upstream/$LATEST_RELEASE_TAG
+          new_branch="pr-from-$LATEST_RELEASE_TAG"
+          git checkout -b "$new_branch"
+          echo "NEW_BRANCH=$new_branch" >> $GITHUB_ENV
+
+      - name: Push branch to fork
+        if: env.UP_TO_DATE == 'false'
+        run: |
+          git push origin "$new_branch"
+
 
       - name: Create PR
         if: env.UP_TO_DATE == 'false'
@@ -52,6 +72,6 @@ jobs:
           gh pr create \
             --title "Update from Upstream ($LATEST_RELEASE_TAG)" \
             --body "This PR updates the fork with the latest changes from upstream, including the latest release tag: $LATEST_RELEASE_TAG." \
-            --head update-from-upstream \
+            --head $NEW_BRANCH \
             --base main
         
