@@ -67,8 +67,6 @@ jobs:
       - name: Exclude workflow files from the branch
         if: env.UP_TO_DATE == 'false'
         run: |
-          git checkout $COMMIT_SHA
-          git switch --create $BRANCH_NAME
           git checkout origin/main -- .github/workflows
           git add .github/workflows
           git commit -m "chore: checkout .github/workflows files from main branch"
