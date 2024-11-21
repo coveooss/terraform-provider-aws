@@ -69,10 +69,9 @@ jobs:
         run: |
           git config --global user.email "githubcoveord@coveo.com"
           git config --global user.name "coveobot"
-          git checkout origin/main -- .github/
+          git restore --source=origin/main -- .github
           git add .github/
           git commit -m "chore: checkout .github/ files from main branch"
-          git diff origin/main
           
       - name: Push branch to fork
         if: env.UP_TO_DATE == 'false'
