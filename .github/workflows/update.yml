@@ -67,10 +67,12 @@ jobs:
       - name: Exclude workflow files from the branch
         if: env.UP_TO_DATE == 'false'
         run: |
-          git reset HEAD --hard .github/workflows/* || echo "No workflows to reset"
-          git checkout -- .github/workflows/* || echo "No workflows to discard"
-          git status
-
+          git checkout $COMMIT_SHA
+          git switch --create $BRANCH_NAME
+          git checkout origin/main -- .github/workflows
+          git add .github/workflows
+          git commit -m "chore: checkout .github/workflows files from main branch"
+          
       - name: Push branch to fork
         if: env.UP_TO_DATE == 'false'
         run: |
