@@ -33,6 +33,8 @@ jobs:
 
           echo "LATEST_RELEASE_TAG=$LATEST_RELEASE_TAG" >> $GITHUB_ENV
           echo "LATEST_RELEASE_COMMIT=$LATEST_RELEASE_COMMIT" >> $GITHUB_ENV
+          echo "UPSTREAM_OWNER=$UPSTREAM_OWNER" >> $GITHUB_ENV
+          echo "UPSTREAM_REPO=$UPSTREAM_REPO" >> $GITHUB_ENV
 
       - name: Check if Fork Contains Latest Release Commit
         run: |
