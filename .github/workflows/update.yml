@@ -71,8 +71,8 @@ jobs:
           git config --global user.name "coveobot"
           git checkout origin/main -- .github/workflows
           git add .github/workflows
-          git diff main
           git commit -m "chore: checkout .github/workflows files from main branch"
+          git diff main
           
       - name: Push branch to fork
         if: env.UP_TO_DATE == 'false'
