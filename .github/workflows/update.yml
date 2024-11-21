@@ -89,5 +89,5 @@ jobs:
             --body "This PR updates the fork with the latest changes from upstream, including the latest release tag: $LATEST_RELEASE_TAG." \
             --head $NEW_BRANCH \
             --base main
-            --repo $UPSTREAM_OWNER/$UPSTREAM_REPO 
+            --repo coveooss/$UPSTREAM_REPO 
         
