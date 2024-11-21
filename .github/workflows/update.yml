@@ -67,6 +67,8 @@ jobs:
       - name: Exclude workflow files from the branch
         if: env.UP_TO_DATE == 'false'
         run: |
+          git config --global user.email "githubcoveord@coveo.com"
+          git config --global user.name "coveobot"
           git checkout origin/main -- .github/workflows
           git add .github/workflows
           git commit -m "chore: checkout .github/workflows files from main branch"
