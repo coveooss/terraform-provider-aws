@@ -56,9 +56,9 @@ jobs:
           git fetch upstream --tags
       - name: Exclude workflow files from the branch
         run: |
-          git reset HEAD .github/workflows/*
-          git commit -m "Exclude workflow files from branch" || echo "No changes to commit"
-
+          git reset HEAD .github/workflows/* || echo "No workflows to reset"
+          git checkout -- .github/workflows/* || echo "No workflows to discard"
+          git status
       - name: Create branch from upstream tag
         if: env.UP_TO_DATE == 'false'
         run: |
