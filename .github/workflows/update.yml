@@ -5,6 +5,10 @@ on:
     - cron: '0 12 * * *' # Runs daily at 12:00 UTC
   workflow_dispatch: # Allows manual triggering of the workflow
 
+permissions:
+  contents: write
+  workflows: write
+  
 jobs:
   check-latest-release:
     runs-on: ubuntu-latest
@@ -63,7 +67,7 @@ jobs:
       - name: Push branch to fork
         if: env.UP_TO_DATE == 'false'
         run: |
-          git push origin "$NEW_BRANCH"
+          git push origin $NEW_BRANCH
 
 
       - name: Create PR
