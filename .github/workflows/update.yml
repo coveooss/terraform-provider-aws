@@ -55,7 +55,7 @@ jobs:
         if: env.UP_TO_DATE == 'false'
         run: |
           git fetch upstream $LATEST_RELEASE_TAG
-          git checkout upstream/$LATEST_RELEASE_TAG
+          git checkout $LATEST_RELEASE_TAG
           new_branch="pr-from-$LATEST_RELEASE_TAG"
           git checkout -b "$new_branch"
           echo "NEW_BRANCH=$new_branch" >> $GITHUB_ENV
