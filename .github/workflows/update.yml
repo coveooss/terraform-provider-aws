@@ -76,12 +76,15 @@ jobs:
         run: |
           git push origin $NEW_BRANCH
 
+      - run: gh auth status
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Create PR
         if: env.UP_TO_DATE == 'false'
         run: |
           gh pr create \
-            --title "Update from Upstream ($LATEST_RELEASE_TAG)" \
+            --title "chore: Update from $UPSTREAM_OWNER/$UPSTREAM_REPO ($LATEST_RELEASE_TAG)" \
             --body "This PR updates the fork with the latest changes from upstream, including the latest release tag: $LATEST_RELEASE_TAG." \
             --head $NEW_BRANCH \
             --base main
