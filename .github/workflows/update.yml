@@ -87,6 +87,6 @@ jobs:
               repo: '${{ env.UPSTREAM_REPO }}',
               head: '${{ env.NEW_BRANCH }}',
               base: 'main',
-              title: chore: Update from ${{ env.UPSTREAM_OWNER }}/${{ env.UPSTREAM_REPO }} (${{ env.LATEST_RELEASE_TAG }})
+              title: "chore: Update from ${{ env.UPSTREAM_OWNER }}/${{ env.UPSTREAM_REPO }} (${{ env.LATEST_RELEASE_TAG }})"
             })
         
