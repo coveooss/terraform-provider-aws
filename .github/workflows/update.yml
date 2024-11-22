@@ -81,8 +81,6 @@ jobs:
 
       - name: Create PR
         if: env.UP_TO_DATE == 'false'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr create \
             --title "Update from Upstream ($LATEST_RELEASE_TAG)" \
@@ -90,4 +88,6 @@ jobs:
             --head $NEW_BRANCH \
             --base main
             --repo coveooss/$UPSTREAM_REPO 
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
