@@ -78,11 +78,13 @@ jobs:
 
       - name: Open pull request
         if: env.UP_TO_DATE == 'false'
+        id: open-pull-request
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
         with:
           github-token: ${{ github.token }}
+          result-encoding: string
           script: |
-            const pr = await github.rest.pulls.create({
+            const {data} = await github.rest.pulls.create({
               owner: 'coveooss',
               repo: '${{ env.UPSTREAM_REPO }}',
               head: '${{ env.NEW_BRANCH }}',
@@ -90,4 +92,16 @@ jobs:
               title: "chore: Update from ${{ env.UPSTREAM_OWNER }}/${{ env.UPSTREAM_REPO }} (${{ env.LATEST_RELEASE_TAG }})",
               body: "A new tag (${{ env.LATEST_RELEASE_TAG }}) has been released in the upstream repository (${{ env.UPSTREAM_OWNER }}/${{ env.UPSTREAM_REPO }}). This PR updates the main branch to this version. "
             })
+            
+            return JSON.parse(data).html_url
+            
+      - name: Slack Notify
+        uses: coveo/actions/slack-notify@v1-slack-notify
+        if: env.UP_TO_DATE == 'false'
+        with:
+          status: ${{ job.status }}
+          channel-id: "C05H5DA6CE8"
+          message: "${{ steps.open-pull-request.result}}"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.RELEASE_SLACK_BOT_TOKEN }}
         
