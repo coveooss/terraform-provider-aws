@@ -76,19 +76,17 @@ jobs:
         run: |
           git push origin $NEW_BRANCH
 
-      - run: gh auth status
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-      - name: Create PR
+      - name: Open pull request
         if: env.UP_TO_DATE == 'false'
-        run: |
-          gh pr create \
-            --title "chore: Update from $UPSTREAM_OWNER/$UPSTREAM_REPO ($LATEST_RELEASE_TAG)" \
-            --body "This PR updates the fork with the latest changes from upstream, including the latest release tag: $LATEST_RELEASE_TAG." \
-            --head $NEW_BRANCH \
-            --base main
-            --repo coveooss/$UPSTREAM_REPO 
-        env:
-          GH_TOKEN: ${{ github.token }}
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const pr = await github.rest.pulls.create({
+              owner: 'coveooss',
+              repo: '${{ env.UPSTREAM_REPO }}',
+              head: '${{ env.NEW_BRANCH }}',
+              base: 'main',
+              title: chore: Update from ${{ env.UPSTREAM_OWNER }}/${{ env.UPSTREAM_REPO }} (${{ env.LATEST_RELEASE_TAG }})
+            })
         
