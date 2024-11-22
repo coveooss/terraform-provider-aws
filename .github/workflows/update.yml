@@ -86,4 +86,6 @@ jobs:
             --head $NEW_BRANCH \
             --base main
             --repo coveooss/$UPSTREAM_REPO 
+        env:
+          GH_TOKEN: ${{ github.token }}
         
