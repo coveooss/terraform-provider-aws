@@ -96,11 +96,12 @@ jobs:
             return JSON.parse(data).html_url
             
       - name: Slack Notify
-        uses: coveo/actions/slack-notify@v1-slack-notify
+        uses: coveo-platform/actions/slack-notify@v1-slack-notify
         if: env.UP_TO_DATE == 'false'
         with:
           status: ${{ job.status }}
           channel-id: "C05H5DA6CE8"
+          header: "New pull request in ${{ github.repositoryUrl }}"
           message: "${{ steps.open-pull-request.result}}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.RELEASE_SLACK_BOT_TOKEN }}
