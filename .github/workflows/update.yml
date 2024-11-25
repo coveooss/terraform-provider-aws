@@ -92,7 +92,6 @@ jobs:
               title: "chore: Update from ${{ env.UPSTREAM_OWNER }}/${{ env.UPSTREAM_REPO }} (${{ env.LATEST_RELEASE_TAG }})",
               body: "A new tag (${{ env.LATEST_RELEASE_TAG }}) has been released in the upstream repository (${{ env.UPSTREAM_OWNER }}/${{ env.UPSTREAM_REPO }}). This PR updates the main branch to this version. "
             })
-            console.log(data)
             
             return data.html_url
             
