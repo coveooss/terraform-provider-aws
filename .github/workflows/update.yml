@@ -45,19 +45,18 @@ jobs:
         run: |
           if git merge-base --is-ancestor $LATEST_RELEASE_COMMIT HEAD; then
             echo "Your fork contains the latest release commit from the upstream repository ($LATEST_RELEASE_COMMIT)."
-            echo "UP_TO_DATE=true" >> $GITHUB_ENV
           else
             echo "Your fork does NOT contain the latest release commit from the upstream repository ($LATEST_RELEASE_COMMIT)."
-            echo "UP_TO_DATE=false" >> $GITHUB_ENV
+            echo "UPDATE=true" >> $GITHUB_ENV
           fi
       - name: Add upstream repository
-        if: env.UP_TO_DATE == 'false'
+        if: env.UPDATE
         run: |
           git remote add upstream https://github.com/$UPSTREAM_OWNER/$UPSTREAM_REPO.git
           git fetch upstream --tags
           
       - name: Create branch from upstream tag
-        if: env.UP_TO_DATE == 'false'
+        if: env.UPDATE
         run: |
           git fetch upstream $LATEST_RELEASE_TAG
           git checkout $LATEST_RELEASE_TAG
@@ -66,7 +65,7 @@ jobs:
           echo "NEW_BRANCH=$new_branch" >> $GITHUB_ENV
           
       - name: Exclude workflow files from the branch
-        if: env.UP_TO_DATE == 'false'
+        if: env.UPDATE
         run: |
           git config --global user.email "githubcoveord@coveo.com"
           git config --global user.name "coveobot"
@@ -75,12 +74,12 @@ jobs:
           git commit -m "chore: checkout .github/ files from main branch"
           
       - name: Push branch to fork
-        if: env.UP_TO_DATE == 'false'
+        if: env.UPDATE
         run: |
           git push origin $NEW_BRANCH
 
       - name: Open pull request
-        if: env.UP_TO_DATE == 'false'
+        if: env.UPDATE
         id: open-pull-request
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
         with:
@@ -100,7 +99,7 @@ jobs:
             
       - name: Slack Notify
         uses: slackapi/slack-github-action@v2.0.0
-        if: env.UP_TO_DATE == 'false'
+        if: env.UPDATE
         with:
           method: chat.postMessage
           token: ${{ secrets.RELEASE_SLACK_BOT_TOKEN }}
