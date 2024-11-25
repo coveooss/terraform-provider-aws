@@ -104,5 +104,5 @@ jobs:
           token: ${{ secrets.RELEASE_SLACK_BOT_TOKEN }}
           payload: |
             channel: "C05H5DA6CE8"
-            text: "New pull request in ${{ github.repositoryUrl }} \n ${{ steps.open-pull-request.result}}"
+            text: "New pull request in https://github.com/${{ github.repository }} \n ${{ steps.open-pull-request.outputs.result}}"
         
