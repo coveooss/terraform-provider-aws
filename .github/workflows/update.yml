@@ -94,7 +94,7 @@ jobs:
             })
             console.log(data)
             
-            return JSON.parse(data).html_url
+            return data.html_url
             
       - name: Slack Notify
         uses: slackapi/slack-github-action@v2.0.0
