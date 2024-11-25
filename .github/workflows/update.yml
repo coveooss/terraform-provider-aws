@@ -5,11 +5,14 @@ on:
     - cron: '0 12 * * *' # Runs daily at 12:00 UTC
   workflow_dispatch: # Allows manual triggering of the workflow
 
-permissions: write-all
+permissions: {}
  
 jobs:
   check-latest-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
