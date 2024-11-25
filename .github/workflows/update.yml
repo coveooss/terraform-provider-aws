@@ -1,0 +1,57 @@
+name: Check Fork for Latest Release
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # Runs daily at 12:00 UTC
+  workflow_dispatch: # Allows manual triggering of the workflow
+
+jobs:
+  check-latest-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: Fetch Latest Release from Upstream
+        id: latest-release
+        run: |
+          # Replace with the owner/repo of the upstream repository
+          UPSTREAM_OWNER="hashicorp"
+          UPSTREAM_REPO="terraform-provider-aws"
+
+          # Use GitHub API to get the latest release
+          LATEST_RELEASE=$(curl -s https://api.github.com/repos/$UPSTREAM_OWNER/$UPSTREAM_REPO/releases/latest)
+
+          # Extract the tag name and commit SHA from the release data
+          LATEST_RELEASE_TAG=$(echo "$LATEST_RELEASE" | jq -r .tag_name)
+          LATEST_RELEASE_COMMIT=$(curl -s https://api.github.com/repos/$UPSTREAM_OWNER/$UPSTREAM_REPO/commits/$LATEST_RELEASE_TAG | jq -r .sha)
+
+          echo "Latest release tag: $LATEST_RELEASE_TAG"
+          echo "Latest release commit: $LATEST_RELEASE_COMMIT"
+
+          echo "LATEST_RELEASE_TAG=$LATEST_RELEASE_TAG" >> $GITHUB_ENV
+          echo "LATEST_RELEASE_COMMIT=$LATEST_RELEASE_COMMIT" >> $GITHUB_ENV
+
+      - name: Check if Fork Contains Latest Release Commit
+        run: |
+          if git merge-base --is-ancestor $LATEST_RELEASE_COMMIT HEAD; then
+            echo "Your fork contains the latest release commit from the upstream repository ($LATEST_RELEASE_COMMIT)."
+            echo "UP_TO_DATE=true" >> $GITHUB_ENV
+          else
+            echo "Your fork does NOT contain the latest release commit from the upstream repository ($LATEST_RELEASE_COMMIT)."
+            echo "UP_TO_DATE=false" >> $GITHUB_ENV
+          fi
+
+      - name: Create PR
+        if: env.UP_TO_DATE == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --title "Update from Upstream ($LATEST_RELEASE_TAG)" \
+            --body "This PR updates the fork with the latest changes from upstream, including the latest release tag: $LATEST_RELEASE_TAG." \
+            --head update-from-upstream \
+            --base main
+        
