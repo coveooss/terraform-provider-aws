@@ -102,6 +102,7 @@ jobs:
         with:
           method: chat.postMessage
           token: ${{ secrets.RELEASE_SLACK_BOT_TOKEN }}
+          errors: true
           payload: |
             channel: "C05H5DA6CE8"
             text: "New pull request in https://github.com/${{ github.repository }} \n ${{ steps.open-pull-request.outputs.result}}"
