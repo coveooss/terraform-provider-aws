@@ -1,18 +1,13 @@
 version: 2
 archives:
-  - files:
-      # Ensure only built binary and license file are archived
-      - src: LICENSE
-        dst: LICENSE.txt
-    format: zip
+  - format: zip
     name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
 before:
   hooks:
     - 'go mod download'
 builds:
-  -
     # Binary naming only required for Terraform CLI 0.12
-    binary: '{{ .ProjectName }}_v{{ .Version }}_x5'
+  - binary: '{{ .ProjectName }}_v{{ .Version }}_x5'
     env:
       - CGO_ENABLED=0
     flags:
