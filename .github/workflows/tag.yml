@@ -1,5 +1,6 @@
 name: Release
 on:
+  workflow_dispatch: 
   push:
     tags:
       - "*"
@@ -32,6 +33,6 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean
+          args: release --clean --timeout 60m
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
