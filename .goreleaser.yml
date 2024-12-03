@@ -18,7 +18,6 @@ builds:
     flags:
       - -trimpath
     goos:
-      - darwin
       - linux
     goarch:
       - amd64
