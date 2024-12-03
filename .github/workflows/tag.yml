@@ -21,10 +21,11 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-tags: true
       - name: Download dependencies
         run: go mod download
       - run: |
-          git fetch --tags
           echo "$(git tag)"
       - name: Free space # Otherwise, runner runs out of space. 
         run: |
