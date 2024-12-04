@@ -1,4 +1,24 @@
-## 5.78.0 (Unreleased)
+## 5.79.0 (Unreleased)
+
+FEATURES:
+
+* **New Resource:** `aws_vpc_block_public_access_exclusion` ([#40235](https://github.com/hashicorp/terraform-provider-aws/issues/40235))
+* **New Resource:** `aws_vpc_block_public_access_options` ([#40233](https://github.com/hashicorp/terraform-provider-aws/issues/40233))
+
+ENHANCEMENTS:
+
+* resource/aws_eks_cluster: Add `compute_config`, `storage_config`, and `kubernetes_network_config.elastic_load_balancing` arguments for EKS Auto Mode ([#40370](https://github.com/hashicorp/terraform-provider-aws/issues/40370))
+* resource/aws_eks_cluster: Add `remote_network_config` argument for EKS Auto Mode ([#40371](https://github.com/hashicorp/terraform-provider-aws/issues/40371))
+* resource/aws_lambda_event_source_mapping: Add `metrics_config` argument ([#40322](https://github.com/hashicorp/terraform-provider-aws/issues/40322))
+* resource/aws_lambda_event_source_mapping: Add `provisioned_poller_config` argument ([#40303](https://github.com/hashicorp/terraform-provider-aws/issues/40303))
+* resource/aws_rds_cluster: Add ability to promote read replica cluster to standalone ([#40337](https://github.com/hashicorp/terraform-provider-aws/issues/40337))
+* resource/aws_vpc_endpoint_service: Add `supported_regions` argument ([#40346](https://github.com/hashicorp/terraform-provider-aws/issues/40346))
+
+BUG FIXES:
+
+* resource/aws_fsx_openzfs_file_system: Increase maximum value of `disk_iops_configuration.iops` from `350000` to `400000` for `deployment_type = "SINGLE_AZ_2"` ([#40359](https://github.com/hashicorp/terraform-provider-aws/issues/40359))
+
+## 5.78.0 (November 26, 2024)
 
 NOTES:
 
