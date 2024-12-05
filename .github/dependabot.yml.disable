@@ -47,6 +47,7 @@ updates:
       - "/.ci/providerlint"
       - "/.ci/tools"
       - "/skaff"
+      - "/tools/awssdkpatch"
       - "/tools/tfsdk2fw"
     schedule:
       interval: "daily"
