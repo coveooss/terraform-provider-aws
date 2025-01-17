@@ -1,0 +1,110 @@
+name: Check Fork for Latest Release
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # Runs daily at 12:00 UTC
+  workflow_dispatch: # Allows manual triggering of the workflow
+
+permissions: {}
+ 
+jobs:
+  check-latest-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch Latest Release from Upstream
+        id: latest-release
+        run: |
+          # Replace with the owner/repo of the upstream repository
+          UPSTREAM_OWNER="hashicorp"
+          UPSTREAM_REPO="terraform-provider-aws"
+
+          # Use GitHub API to get the latest release
+          LATEST_RELEASE=$(curl -s https://api.github.com/repos/$UPSTREAM_OWNER/$UPSTREAM_REPO/releases/latest)
+
+          # Extract the tag name and commit SHA from the release data
+          LATEST_RELEASE_TAG=$(echo "$LATEST_RELEASE" | jq -r .tag_name)
+          LATEST_RELEASE_COMMIT=$(curl -s https://api.github.com/repos/$UPSTREAM_OWNER/$UPSTREAM_REPO/commits/$LATEST_RELEASE_TAG | jq -r .sha)
+
+          echo "Latest release tag: $LATEST_RELEASE_TAG"
+          echo "Latest release commit: $LATEST_RELEASE_COMMIT"
+
+          echo "LATEST_RELEASE_TAG=$LATEST_RELEASE_TAG" >> $GITHUB_ENV
+          echo "LATEST_RELEASE_COMMIT=$LATEST_RELEASE_COMMIT" >> $GITHUB_ENV
+          echo "UPSTREAM_OWNER=$UPSTREAM_OWNER" >> $GITHUB_ENV
+          echo "UPSTREAM_REPO=$UPSTREAM_REPO" >> $GITHUB_ENV
+
+      - name: Check if Fork Contains Latest Release Commit
+        run: |
+          if git merge-base --is-ancestor $LATEST_RELEASE_COMMIT HEAD; then
+            echo "Your fork contains the latest release commit from the upstream repository ($LATEST_RELEASE_COMMIT)."
+          else
+            echo "Your fork does NOT contain the latest release commit from the upstream repository ($LATEST_RELEASE_COMMIT)."
+            echo "UPDATE=true" >> $GITHUB_ENV
+          fi
+      - name: Add upstream repository
+        if: env.UPDATE
+        run: |
+          git remote add upstream https://github.com/$UPSTREAM_OWNER/$UPSTREAM_REPO.git
+          git fetch upstream --tags
+          
+      - name: Create branch from upstream tag
+        if: env.UPDATE
+        run: |
+          git fetch upstream $LATEST_RELEASE_TAG
+          git checkout $LATEST_RELEASE_TAG
+          new_branch="pr-from-$LATEST_RELEASE_TAG"
+          git checkout -b "$new_branch"
+          echo "NEW_BRANCH=$new_branch" >> $GITHUB_ENV
+          
+      - name: Exclude workflow files from the branch
+        if: env.UPDATE
+        run: |
+          git config --global user.email "githubcoveord@coveo.com"
+          git config --global user.name "coveobot"
+          git restore --source=origin/main -- .github
+          git add .github/
+          git commit -m "chore: checkout .github/ files from main branch"
+          
+      - name: Push branch to fork
+        if: env.UPDATE
+        run: |
+          git push origin $NEW_BRANCH
+
+      - name: Open pull request
+        if: env.UPDATE
+        id: open-pull-request
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+        with:
+          github-token: ${{ github.token }}
+          result-encoding: string
+          script: |
+            const {data} = await github.rest.pulls.create({
+              owner: 'coveooss',
+              repo: '${{ env.UPSTREAM_REPO }}',
+              head: '${{ env.NEW_BRANCH }}',
+              base: 'main',
+              title: "chore: Update from ${{ env.UPSTREAM_OWNER }}/${{ env.UPSTREAM_REPO }} (${{ env.LATEST_RELEASE_TAG }})",
+              body: "A new tag (${{ env.LATEST_RELEASE_TAG }}) has been released in the upstream repository (${{ env.UPSTREAM_OWNER }}/${{ env.UPSTREAM_REPO }}). This PR updates the main branch to this version. "
+            })
+            
+            return data.html_url
+            
+      - name: Slack Notify
+        uses: slackapi/slack-github-action@v2.0.0
+        if: env.UPDATE
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.RELEASE_SLACK_BOT_TOKEN }}
+          errors: true
+          payload: |
+            channel: "C05H5DA6CE8"
+            text: "New pull request in https://github.com/${{ github.repository }} \n ${{ steps.open-pull-request.outputs.result}}"
+        
