@@ -1,6 +1,10 @@
 version: 2
 archives:
-  - format: zip
+  - files:
+      # Ensure only built binary and license file are archived
+      - src: LICENSE
+        dst: LICENSE.txt
+    formats: ['zip']
     name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
 before:
   hooks:
