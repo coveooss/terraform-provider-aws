@@ -105,6 +105,10 @@ func dataSourceObject() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"forced_content_type": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			names.AttrKey: {
 				Type:     schema.TypeString,
 				Required: true,
@@ -247,6 +251,10 @@ func dataSourceObjectRead(ctx context.Context, d *schema.ResourceData, meta inte
 	d.Set("version_id", output.VersionId)
 	d.Set("website_redirect_location", output.WebsiteRedirectLocation)
 
+	if forced_content_type := d.Get("forced_content_type").(string); forced_content_type != "" {
+		// The forced content type is set by the user, so we trust it and allow access to the body
+		output.ContentType = aws.String(forced_content_type)
+	}
 	if isContentTypeAllowed(output.ContentType) {
 		downloader := manager.NewDownloader(conn, manager.WithDownloaderClientOptions(optFns...))
 		buf := manager.NewWriteAtBuffer(make([]byte, 0))

@@ -105,6 +105,33 @@ func TestAccS3ObjectDataSource_readableBody(t *testing.T) {
 		},
 	})
 }
+func TestAccS3ObjectDataSource_forcedContentType_readableBody(t *testing.T) {
+
+	ctx := acctest.Context(t)
+	rName := sdkacctest.RandomWithPrefix(acctest.ResourcePrefix)
+	resourceName := "aws_s3_object.test"
+	dataSourceName := fmt.Sprintf("data.%s", resourceName)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                  func() { acctest.PreCheck(ctx, t) },
+		ErrorCheck:                acctest.ErrorCheck(t, names.S3ServiceID),
+		ProtoV5ProviderFactories:  acctest.ProtoV5ProviderFactories,
+		PreventPostDestroyRefresh: true,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccObjectDataSourceConfig_forcedContentType_readableBody(rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(dataSourceName, "content_type", "application/x-x509-ca-cert"),
+					resource.TestCheckResourceAttr(dataSourceName, "etag", "877716107971cdd406981bbbe85c97f4"),
+					resource.TestCheckResourceAttr(dataSourceName, "body", "-----BEGIN CERTIFICATE-----\nbWFpbiBDb250cm9sIFZhbGlkYXRXDDEdMBsGA1UECxMUUG9zaXRpdmVTU0wgV2ls==\n-----END CERTIFICATE-----"),
+					resource.TestCheckResourceAttr(dataSourceName, "content_length", "120"),
+					resource.TestCheckResourceAttrPair(dataSourceName, names.AttrContentType, resourceName, names.AttrContentType),
+					resource.TestMatchResourceAttr(dataSourceName, "last_modified", regexache.MustCompile(rfc1123RegexPattern)),
+				),
+			},
+		},
+	})
+}
 
 func TestAccS3ObjectDataSource_kmsEncrypted(t *testing.T) {
 	ctx := acctest.Context(t)
@@ -580,6 +607,27 @@ func TestAccS3ObjectDataSource_directoryBucket(t *testing.T) {
 			},
 		},
 	})
+}
+
+func testAccObjectDataSourceConfig_forcedContentType_readableBody(name string) string {
+	resources := fmt.Sprintf(`
+resource "aws_s3_bucket" "test" {
+	bucket = %[1]q
+}
+resource "aws_s3_object" "test" {
+	bucket       = "${aws_s3_bucket.test.bucket}"
+    key          = "%[1]s-key"
+	content      = "-----BEGIN CERTIFICATE-----\nbWFpbiBDb250cm9sIFZhbGlkYXRXDDEdMBsGA1UECxMUUG9zaXRpdmVTU0wgV2ls==\n-----END CERTIFICATE-----"
+	content_type = "application/x-x509-ca-cert"
+}
+data "aws_s3_object" "test" {
+	bucket              = aws_s3_bucket.test.bucket
+	key                 = aws_s3_object.test.key
+	forced_content_type = "text/text"
+}
+`, name)
+
+	return resources
 }
 
 func testAccObjectDataSourceConfig_basic(rName string) string {
