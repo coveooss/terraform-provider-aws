@@ -61,12 +61,6 @@ type resourceBucketLifecycleConfiguration struct {
 	framework.WithTimeouts
 }
 
-// Metadata should return the full name of the resource, such as
-// examplecloud_thing.
-func (r *resourceBucketLifecycleConfiguration) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
-	response.TypeName = "aws_s3_bucket_lifecycle_configuration"
-}
-
 // Schema returns the schema for this resource.
 func (r *resourceBucketLifecycleConfiguration) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
@@ -924,7 +918,7 @@ func (m lifecycleExpirationModel) Expand(ctx context.Context) (result any, diags
 	// For legacy-mode reasons, `days` may be zero, but should be treated as `nil`
 	days := fwflex.ZeroInt32AsNull(m.Days)
 
-	r.Days = fwflex.Int32FromFrameworkInt32(ctx, days)
+	r.Days = fwflex.Int32FromFramework(ctx, days)
 
 	if m.ExpiredObjectDeleteMarker.IsUnknown() || m.ExpiredObjectDeleteMarker.IsNull() {
 		if (m.Date.IsUnknown() || m.Date.IsNull()) && (days.IsUnknown() || days.IsNull()) {
@@ -978,7 +972,7 @@ func (m transitionModel) Expand(ctx context.Context) (result any, diags diag.Dia
 			r.Days = aws.Int32(0)
 		}
 	} else {
-		r.Days = fwflex.Int32FromFrameworkInt32(ctx, m.Days)
+		r.Days = fwflex.Int32FromFramework(ctx, m.Days)
 	}
 
 	r.StorageClass = m.StorageClass.ValueEnum()
@@ -997,9 +991,9 @@ var (
 )
 
 type lifecycleRuleAndOperatorModel struct {
-	ObjectSizeGreaterThan types.Int64  `tfsdk:"object_size_greater_than" autoflex:",legacy"`
-	ObjectSizeLessThan    types.Int64  `tfsdk:"object_size_less_than" autoflex:",legacy"`
-	Prefix                types.String `tfsdk:"prefix" autoflex:",legacy"`
+	ObjectSizeGreaterThan types.Int64  `tfsdk:"object_size_greater_than"`
+	ObjectSizeLessThan    types.Int64  `tfsdk:"object_size_less_than"`
+	Prefix                types.String `tfsdk:"prefix"`
 	Tags                  tftags.Map   `tfsdk:"tags"`
 }
 
@@ -1008,7 +1002,7 @@ func (m lifecycleRuleAndOperatorModel) Expand(ctx context.Context) (result any, 
 
 	r.ObjectSizeGreaterThan = fwflex.Int64FromFramework(ctx, m.ObjectSizeGreaterThan)
 
-	r.ObjectSizeLessThan = fwflex.Int64FromFramework(ctx, m.ObjectSizeLessThan)
+	r.ObjectSizeLessThan = fwflex.Int64FromFrameworkLegacy(ctx, m.ObjectSizeLessThan)
 
 	r.Prefix = fwflex.StringFromFramework(ctx, m.Prefix)
 
