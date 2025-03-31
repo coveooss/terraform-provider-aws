@@ -91,6 +91,30 @@ func dataSourceIPAMPools() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+						"source_resource": {
+							Type:     schema.TypeList,
+							Computed: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"resource_id": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+									"resource_owner": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+									"resource_region": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+									"resource_type": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+								},
+							},
+						},
 						names.AttrState: {
 							Type:     schema.TypeString,
 							Computed: true,
@@ -158,6 +182,13 @@ func flattenIPAMPool(ctx context.Context, p awstypes.IpamPool, ignoreTagsConfig 
 	pool["publicly_advertisable"] = aws.ToBool(p.PubliclyAdvertisable)
 	pool["source_ipam_pool_id"] = aws.ToString(p.SourceIpamPoolId)
 	pool[names.AttrState] = p.State
+
+	if p.SourceResource != nil {
+		pool["source_resource"] = []any{flattenIpamPoolSourceResource(p.SourceResource)}
+	} else {
+		pool["source_resource"] = nil
+	}
+
 	if v := p.Tags; v != nil {
 		pool[names.AttrTags] = keyValueTags(ctx, v).IgnoreAWS().IgnoreConfig(ignoreTagsConfig).Map()
 	}

@@ -4050,6 +4050,55 @@ func findIPAMPoolCIDRByPoolCIDRIDAndPoolID(ctx context.Context, conn *ec2.Client
 	return output, nil
 }
 
+func findIPAMResourceCidr(ctx context.Context, conn *ec2.Client, input *ec2.GetIpamResourceCidrsInput) (*awstypes.IpamResourceCidr, error) {
+	output, err := findIPAMResourceCidrs(ctx, conn, input)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return tfresource.AssertSingleValueResult(output)
+}
+
+func findIPAMResourceCidrs(ctx context.Context, conn *ec2.Client, input *ec2.GetIpamResourceCidrsInput) ([]awstypes.IpamResourceCidr, error) {
+	var output []awstypes.IpamResourceCidr
+
+	pages := ec2.NewGetIpamResourceCidrsPaginator(conn, input)
+	for pages.HasMorePages() {
+		page, err := pages.NextPage(ctx)
+
+		if tfawserr.ErrCodeEquals(err, errCodeInvalidIPAMScopeIdNotFound) {
+			return nil, &retry.NotFoundError{
+				LastError:   err,
+				LastRequest: &input,
+			}
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		output = append(output, page.IpamResourceCidrs...)
+	}
+
+	return output, nil
+}
+
+func findIPAMResourceCidrsByResourceId(ctx context.Context, conn *ec2.Client, scopeID, resourceID string) (*awstypes.IpamResourceCidr, error) {
+	input := ec2.GetIpamResourceCidrsInput{
+		IpamScopeId: aws.String(scopeID),
+		ResourceId:  aws.String(resourceID),
+	}
+
+	output, err := findIPAMResourceCidr(ctx, conn, &input)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return output, nil
+}
+
 func findIPAMResourceDiscovery(ctx context.Context, conn *ec2.Client, input *ec2.DescribeIpamResourceDiscoveriesInput) (*awstypes.IpamResourceDiscovery, error) {
 	output, err := findIPAMResourceDiscoveries(ctx, conn, input)
 

@@ -15,16 +15,30 @@ import (
 	"github.com/hashicorp/aws-sdk-go-base/v2/tfawserr"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-provider-aws/internal/conns"
 	"github.com/hashicorp/terraform-provider-aws/internal/enum"
 	"github.com/hashicorp/terraform-provider-aws/internal/errs/sdkdiag"
 	"github.com/hashicorp/terraform-provider-aws/internal/logging"
+	tfslices "github.com/hashicorp/terraform-provider-aws/internal/slices"
 	tftags "github.com/hashicorp/terraform-provider-aws/internal/tags"
 	"github.com/hashicorp/terraform-provider-aws/internal/tfresource"
 	"github.com/hashicorp/terraform-provider-aws/internal/verify"
 	"github.com/hashicorp/terraform-provider-aws/names"
+)
+
+const (
+	subnetCIDRMaxIPv4Netmask  = 28
+	subnetCIDRMinIPv4Netmask  = 16
+	subnetCIDRMaxIPv6Netmask  = 64
+	subnetCIDRMinIPv6Netmask  = 44
+	subnetCIDRIPv6NetmaskStep = 4
+)
+
+var (
+	subnetCIDRValidIPv6Netmasks = tfslices.Range(subnetCIDRMinIPv6Netmask, subnetCIDRMaxIPv6Netmask+1, subnetCIDRIPv6NetmaskStep)
 )
 
 // @SDKResource("aws_subnet", name="Subnet")
@@ -77,10 +91,12 @@ func resourceSubnet() *schema.Resource {
 				ConflictsWith: []string{names.AttrAvailabilityZone},
 			},
 			names.AttrCIDRBlock: {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: verify.ValidIPv4CIDRNetworkAddress,
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				Computed:      true,
+				ValidateFunc:  verify.ValidIPv4CIDRNetworkAddress,
+				ConflictsWith: []string{"ipv4_netmask_length"},
 			},
 			"customer_owned_ipv4_pool": {
 				Type:         schema.TypeString,
@@ -107,14 +123,40 @@ func resourceSubnet() *schema.Resource {
 				Optional: true,
 				Default:  false,
 			},
+			"ipv4_ipam_pool_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+			"ipv4_netmask_length": {
+				Type:          schema.TypeInt,
+				Optional:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{names.AttrCIDRBlock},
+				RequiredWith:  []string{"ipv4_ipam_pool_id"},
+				ValidateFunc:  validation.IntBetween(subnetCIDRMinIPv4Netmask, subnetCIDRMaxIPv4Netmask),
+			},
 			"ipv6_cidr_block": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: verify.ValidIPv6CIDRNetworkAddress,
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ConflictsWith: []string{"ipv6_netmask_length"},
+				ValidateFunc:  verify.ValidIPv6CIDRNetworkAddress,
 			},
 			"ipv6_cidr_block_association_id": {
 				Type:     schema.TypeString,
 				Computed: true,
+			},
+			"ipv6_ipam_pool_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"ipv6_netmask_length": {
+				Type:          schema.TypeInt,
+				Optional:      true,
+				ConflictsWith: []string{"ipv6_cidr_block"},
+				RequiredWith:  []string{"ipv6_ipam_pool_id"},
+				ValidateFunc:  validation.IntInSlice(subnetCIDRValidIPv6Netmasks),
 			},
 			"ipv6_native": {
 				Type:     schema.TypeBool,
@@ -180,8 +222,24 @@ func resourceSubnetCreate(ctx context.Context, d *schema.ResourceData, meta any)
 		input.CidrBlock = aws.String(v.(string))
 	}
 
+	if v, ok := d.GetOk("ipv4_ipam_pool_id"); ok {
+		input.Ipv4IpamPoolId = aws.String(v.(string))
+	}
+
+	if v, ok := d.GetOk("ipv4_netmask_length"); ok {
+		input.Ipv4NetmaskLength = aws.Int32(int32(v.(int)))
+	}
+
 	if v, ok := d.GetOk("ipv6_cidr_block"); ok {
 		input.Ipv6CidrBlock = aws.String(v.(string))
+	}
+
+	if v, ok := d.GetOk("ipv6_ipam_pool_id"); ok {
+		input.Ipv6IpamPoolId = aws.String(v.(string))
+	}
+
+	if v, ok := d.GetOk("ipv6_netmask_length"); ok {
+		input.Ipv6NetmaskLength = aws.Int32(int32(v.(int)))
 	}
 
 	if v, ok := d.GetOk("ipv6_native"); ok {
@@ -220,7 +278,9 @@ func resourceSubnetCreate(ctx context.Context, d *schema.ResourceData, meta any)
 		}
 	}
 
-	if err := modifySubnetAttributesOnCreate(ctx, conn, d, subnet, false); err != nil {
+	// When providing an IPAM pool ID, the CIDR block is will be assigned by the IPAM pool.
+	_, computedIPv6CidrBlock := d.GetOk("ipv6_ipam_pool_id")
+	if err := modifySubnetAttributesOnCreate(ctx, conn, d, subnet, computedIPv6CidrBlock); err != nil {
 		return sdkdiag.AppendFromErr(diags, err)
 	}
 
@@ -311,8 +371,16 @@ func resourceSubnetUpdate(ctx context.Context, d *schema.ResourceData, meta any)
 	}
 
 	// If we're enabling dns64 and resource_name_dns_aaaa_record_on_launch, do that after modifying the IPv6 CIDR block.
-	if d.HasChange("ipv6_cidr_block") {
-		if err := modifySubnetIPv6CIDRBlockAssociation(ctx, conn, d.Id(), d.Get("ipv6_cidr_block_association_id").(string), d.Get("ipv6_cidr_block").(string)); err != nil {
+	if d.HasChanges("ipv6_cidr_block", "ipv6_ipam_pool_id", "ipv6_netmask_length") {
+		if err := modifySubnetIPv6CIDRBlockAssociation(
+			ctx,
+			conn,
+			d.Id(),
+			d.Get("ipv6_cidr_block_association_id").(string),
+			d.Get("ipv6_cidr_block").(string),
+			d.Get("ipv6_ipam_pool_id").(string),
+			d.Get("ipv6_netmask_length").(int),
+		); err != nil {
 			return sdkdiag.AppendFromErr(diags, err)
 		}
 	}
@@ -389,6 +457,29 @@ func resourceSubnetDelete(ctx context.Context, d *schema.ResourceData, meta any)
 		return sdkdiag.AppendErrorf(diags, "deleting EC2 Subnet (%s): %s", d.Id(), err)
 	}
 
+	// If the subnet's CIDR block was allocated from an IPAM pool, wait for the allocation to disappear.
+	var ipamPoolID string
+	if v, ok := d.GetOk("ipv4_ipam_pool_id"); ok {
+		ipamPoolID = v.(string)
+	}
+	if ipamPoolID == "" {
+		if v, ok := d.GetOk("ipv6_ipam_pool_id"); ok {
+			ipamPoolID = v.(string)
+		}
+	}
+	if ipamPoolID != "" {
+		const (
+			timeout = 35 * time.Minute // IPAM eventual consistency. It can take ~30 min to release allocations.
+		)
+		_, err := tfresource.RetryUntilNotFound(ctx, timeout, func() (any, error) {
+			return findIPAMPoolAllocationsByIPAMPoolIDAndSubnetId(ctx, conn, ipamPoolID, d.Id())
+		})
+
+		if err != nil {
+			return sdkdiag.AppendErrorf(diags, "waiting for EC2 Subnet (%s) IPAM Pool (%s) Allocation delete: %s", d.Id(), ipamPoolID, err)
+		}
+	}
+
 	return diags
 }
 
@@ -410,7 +501,8 @@ func modifySubnetAttributesOnCreate(ctx context.Context, conn *ec2.Client, d *sc
 	}
 
 	// Creating a new IPv6-native default subnet assigns a computed IPv6 CIDR block.
-	// Don't attempt to do anything with it.
+	// Don't attempt to do anything with it. Also, don't attempt to modify the IPv6
+	// CIDR block if the subnet was created with an IPv6 CIDR block from an IPAM pool.
 	if !computedIPv6CidrBlock {
 		var oldAssociationID, oldIPv6CIDRBlock string
 		for _, v := range subnet.Ipv6CidrBlockAssociationSet {
@@ -422,7 +514,7 @@ func modifySubnetAttributesOnCreate(ctx context.Context, conn *ec2.Client, d *sc
 			}
 		}
 		if new := d.Get("ipv6_cidr_block").(string); oldIPv6CIDRBlock != new {
-			if err := modifySubnetIPv6CIDRBlockAssociation(ctx, conn, d.Id(), oldAssociationID, new); err != nil {
+			if err := modifySubnetIPv6CIDRBlockAssociation(ctx, conn, d.Id(), oldAssociationID, new, "", 0); err != nil {
 				return err
 			}
 		}
@@ -578,7 +670,7 @@ func modifySubnetEnableResourceNameDNSARecordOnLaunch(ctx context.Context, conn 
 	return nil
 }
 
-func modifySubnetIPv6CIDRBlockAssociation(ctx context.Context, conn *ec2.Client, subnetID, associationID, cidrBlock string) error {
+func modifySubnetIPv6CIDRBlockAssociation(ctx context.Context, conn *ec2.Client, subnetID, associationID, cidrBlock, ipamPoolID string, netmaskLength int) error {
 	// We need to handle that we disassociate the IPv6 CIDR block before we try to associate the new one
 	// This could be an issue as, we could error out when we try to add the new one
 	// We may need to roll back the state and reattach the old one if this is the case
@@ -600,10 +692,16 @@ func modifySubnetIPv6CIDRBlockAssociation(ctx context.Context, conn *ec2.Client,
 		}
 	}
 
-	if cidrBlock != "" {
+	if cidrBlock != "" || ipamPoolID != "" {
 		input := &ec2.AssociateSubnetCidrBlockInput{
-			Ipv6CidrBlock: aws.String(cidrBlock),
-			SubnetId:      aws.String(subnetID),
+			SubnetId: aws.String(subnetID),
+		}
+
+		if ipamPoolID != "" && netmaskLength > 0 {
+			input.Ipv6IpamPoolId = aws.String(ipamPoolID)
+			input.Ipv6NetmaskLength = aws.Int32(int32(netmaskLength))
+		} else if cidrBlock != "" {
+			input.Ipv6CidrBlock = aws.String(cidrBlock)
 		}
 
 		output, err := conn.AssociateSubnetCidrBlock(ctx, input)
@@ -611,7 +709,7 @@ func modifySubnetIPv6CIDRBlockAssociation(ctx context.Context, conn *ec2.Client,
 		if err != nil {
 			//The big question here is, do we want to try to reassociate the old one??
 			//If we have a failure here, then we may be in a situation that we have nothing associated
-			return fmt.Errorf("associating EC2 Subnet (%s) IPv6 CIDR block (%s): %w", subnetID, cidrBlock, err)
+			return fmt.Errorf("associating EC2 Subnet (%s) IPv6 CIDR block: %w", subnetID, err)
 		}
 
 		associationID := aws.ToString(output.Ipv6CidrBlockAssociation.AssociationId)
@@ -683,4 +781,17 @@ func modifySubnetPrivateDNSHostnameTypeOnLaunch(ctx context.Context, conn *ec2.C
 	}
 
 	return nil
+}
+
+func findIPAMPoolAllocationsByIPAMPoolIDAndSubnetId(ctx context.Context, conn *ec2.Client, ipamPoolID, subnetID string) ([]awstypes.IpamPoolAllocation, error) {
+	allocations, err := findIPAMPoolAllocationsByIPAMPoolIDAndResourceID(ctx, conn, ipamPoolID, subnetID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(allocations) == 0 {
+		return nil, &retry.NotFoundError{}
+	}
+
+	return allocations, nil
 }

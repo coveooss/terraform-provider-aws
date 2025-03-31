@@ -138,6 +138,37 @@ func resourceIPAMPool() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"source_resource": {
+				Type:     schema.TypeList,
+				Optional: true,
+				ForceNew: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"resource_id": {
+							Type:     schema.TypeString,
+							Required: true,
+							ForceNew: true,
+						},
+						"resource_owner": {
+							Type:     schema.TypeString,
+							Required: true,
+							ForceNew: true,
+						},
+						"resource_region": {
+							Type:     schema.TypeString,
+							Required: true,
+							ForceNew: true,
+						},
+						"resource_type": {
+							Type:             schema.TypeString,
+							Required:         true,
+							ForceNew:         true,
+							ValidateDiagFunc: enum.Validate[awstypes.IpamPoolSourceResourceType](),
+						},
+					},
+				},
+			},
 			names.AttrState: {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -213,6 +244,26 @@ func resourceIPAMPoolCreate(ctx context.Context, d *schema.ResourceData, meta an
 		input.SourceIpamPoolId = aws.String(v.(string))
 	}
 
+	if v, ok := d.GetOk("source_resource"); ok && len(v.([]any)) > 0 && v.([]any)[0] != nil {
+		input.SourceResource = expandSourceResource(v.([]any)[0].(map[string]any))
+	}
+
+	// Handle the case where a VPC not yet monitored by IPAM. If the resource is not monitored, the IPAM Pool
+	// creation will fail (and the pool will remain in a create-failed state).
+	if input.SourceResource != nil && input.SourceResource.ResourceType == awstypes.IpamPoolSourceResourceTypeVpc {
+		const (
+			timeout = 35 * time.Minute // It can take ~30 min for the resource to be monitored.
+		)
+
+		_, err := tfresource.RetryWhenNotFound(ctx, timeout, func() (any, error) {
+			return findIPAMResourceCidrsByResourceId(ctx, conn, *input.IpamScopeId, *input.SourceResource.ResourceId)
+		})
+
+		if err != nil {
+			return sdkdiag.AppendErrorf(diags, "waiting for VPC (%s) to be monitored within IPAM Scope (%s): %s", *input.SourceResource.ResourceId, *input.IpamScopeId, err)
+		}
+	}
+
 	output, err := conn.CreateIpamPool(ctx, input)
 
 	if err != nil {
@@ -259,6 +310,14 @@ func resourceIPAMPoolRead(ctx context.Context, d *schema.ResourceData, meta any)
 	d.Set("public_ip_source", pool.PublicIpSource)
 	d.Set("source_ipam_pool_id", pool.SourceIpamPoolId)
 	d.Set(names.AttrState, pool.State)
+
+	if pool.SourceResource != nil {
+		if err := d.Set("source_resource", []any{flattenIpamPoolSourceResource(pool.SourceResource)}); err != nil {
+			return sdkdiag.AppendErrorf(diags, "setting source_resource: %s", err)
+		}
+	} else {
+		d.Set("source_resource", nil)
+	}
 
 	setTagsOut(ctx, pool.Tags)
 
@@ -350,6 +409,32 @@ func resourceIPAMPoolDelete(ctx context.Context, d *schema.ResourceData, meta an
 	}
 
 	return diags
+}
+
+func expandSourceResource(tfMap map[string]any) *awstypes.IpamPoolSourceResourceRequest {
+	if tfMap == nil {
+		return nil
+	}
+
+	return &awstypes.IpamPoolSourceResourceRequest{
+		ResourceId:     aws.String(tfMap["resource_id"].(string)),
+		ResourceOwner:  aws.String(tfMap["resource_owner"].(string)),
+		ResourceRegion: aws.String(tfMap["resource_region"].(string)),
+		ResourceType:   awstypes.IpamPoolSourceResourceType(tfMap["resource_type"].(string)),
+	}
+}
+
+func flattenIpamPoolSourceResource(apiObject *awstypes.IpamPoolSourceResource) map[string]any {
+	if apiObject == nil {
+		return nil
+	}
+
+	return map[string]any{
+		"resource_id":     aws.ToString(apiObject.ResourceId),
+		"resource_owner":  aws.ToString(apiObject.ResourceOwner),
+		"resource_region": aws.ToString(apiObject.ResourceRegion),
+		"resource_type":   string(apiObject.ResourceType),
+	}
 }
 
 func ipamResourceTags(tags tftags.KeyValueTags) []awstypes.RequestIpamResourceTag {

@@ -97,6 +97,30 @@ func dataSourceIPAMPool() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"source_resource": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"resource_id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"resource_owner": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"resource_region": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"resource_type": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
+			},
 			names.AttrState: {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -148,6 +172,12 @@ func dataSourceIPAMPoolRead(ctx context.Context, d *schema.ResourceData, meta an
 	d.Set("publicly_advertisable", pool.PubliclyAdvertisable)
 	d.Set("source_ipam_pool_id", pool.SourceIpamPoolId)
 	d.Set(names.AttrState, pool.State)
+
+	if pool.SourceResource != nil {
+		d.Set("source_resource", []any{flattenIpamPoolSourceResource(pool.SourceResource)})
+	} else {
+		d.Set("source_resource", nil)
+	}
 
 	setTagsOut(ctx, pool.Tags)
 
