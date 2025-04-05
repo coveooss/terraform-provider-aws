@@ -1,20 +1,26 @@
-name: "Repository/Meta"
-description: Choose this option when the issue has to do with the repository itself, including GitHub Actions, labels, workflows, etc.
-title: "[Repo]: "
-labels: ["repository"]
+name: "Other"
+description: "Choose this option if your issue does not fit the description of the others."
 body:
   - type: markdown
     attributes:
       value: |
-        # Thank you for opening an issue!
+        # Thank you for raising an issue!
 
-        This form is for issues pertaining to the repository itself. This might include changes to GitHub Actions, labels, procedures, etc. For issues with the contribution documentation, please use the "Report a Documentation Error" form.
+        This form is meant as a catch-all for issues that do not fit into one of the other existing forms:
+
+        * Report a Bug
+        * Report a Documentation Error
+        * Request an Enhancement
+        * Request a New Resource, Data Source, or AWS Service
+        * Repository/Meta
+
+        By nature this form is less rigid, so providing a bit of additional information, context, or reference material is very much appreciated.
 
   - type: textarea
     id: description
     attributes:
       label: Description
-      description: Please leave a brief description of the issue or proposed change.
+      description: Please leave a detailed description of the issue.
     validations:
       required: true
 
