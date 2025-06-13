@@ -29,11 +29,35 @@ func (p *servicePackage) FrameworkResources(ctx context.Context) []*types.Servic
 			},
 		},
 		{
+			Factory:  newDataProtectionSettingsResource,
+			TypeName: "aws_workspacesweb_data_protection_settings",
+			Name:     "Data Protection Settings",
+			Tags: &types.ServicePackageResourceTags{
+				IdentifierAttribute: "data_protection_settings_arn",
+			},
+		},
+		{
+			Factory:  newIPAccessSettingsResource,
+			TypeName: "aws_workspacesweb_ip_access_settings",
+			Name:     "IP Access Settings",
+			Tags: &types.ServicePackageResourceTags{
+				IdentifierAttribute: "ip_access_settings_arn",
+			},
+		},
+		{
 			Factory:  newNetworkSettingsResource,
 			TypeName: "aws_workspacesweb_network_settings",
 			Name:     "Network Settings",
 			Tags: &types.ServicePackageResourceTags{
 				IdentifierAttribute: "network_settings_arn",
+			},
+		},
+		{
+			Factory:  newUserAccessLoggingSettingsResource,
+			TypeName: "aws_workspacesweb_user_access_logging_settings",
+			Name:     "User Access Logging Settings",
+			Tags: &types.ServicePackageResourceTags{
+				IdentifierAttribute: "user_access_logging_settings_arn",
 			},
 		},
 		{
