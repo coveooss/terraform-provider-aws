@@ -1,0 +1,48 @@
+name: Release
+on:
+  workflow_dispatch: 
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+       
+permissions:
+  contents: write
+  
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+        with:
+          egress-policy: audit
+
+      - name: Setup Go
+        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
+        with:
+          go-version: 1.23.2
+        id: go
+
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+      - name: Download dependencies
+        run: go mod download
+      - run: |
+          echo "$(git tag)"
+      - name: Free space # Otherwise, runner runs out of space. 
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          sudo docker builder prune -a      
+      - name: Release
+        uses: goreleaser/goreleaser-action@7ec5c2b0c6cdda6e8bbb49444bc797dd33d74dd8
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean --timeout 60m
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
